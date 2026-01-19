@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: dailygames-backend
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/dailygames
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-changeme}
+      - JWT_SECRET=${JWT_SECRET:-YourSuperSecretKeyForJWTTokenGenerationMustBeAtLeast256BitsLong!}
+      - CORS_ALLOWED_ORIGINS=${CORS_ORIGINS:-http://localhost}
+    depends_on:
+      - db
+    networks:
+      - dailygames-network
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: dailygames-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - dailygames-network
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    container_name: dailygames-db
+    environment:
+      - POSTGRES_DB=dailygames
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - dailygames-network
+    restart: unless-stopped
+
+networks:
+  dailygames-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./mvnw spring-boot:run:*)",
+      "Bash(npm install)",
+      "Bash(mvn spring-boot:run:*)",
+      "Bash(where:*)",
+      "Bash(npm run dev:*)",
+      "Bash(winget install:*)",
+      "Bash(winget search:*)",
+      "Bash(curl:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(export PATH=\"$PATH:/c/tools/apache-maven-3.9.5/bin:/c/Program Files/Microsoft/jdk-17.0.17.10-hotspot/bin\")",
+      "Bash(java -version:*)",
+      "Bash(mvn:*)",
+      "Bash(npm install:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
