@@ -1,0 +1,15 @@
+[build]
+builder = "nixpacks"
+
+[build.nixpacksPlan.phases.setup]
+nixPkgs = ["jdk17", "maven"]
+
+[build.nixpacksPlan.phases.build]
+cmds = ["mvn clean package -DskipTests"]
+
+[deploy]
+startCommand = "java -jar target/*.jar"
+healthcheckPath = "/api/games"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
