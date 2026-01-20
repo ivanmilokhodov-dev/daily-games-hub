@@ -1,5 +1,6 @@
 package com.dailygames.hub.service;
 
+import com.dailygames.hub.dto.FriendGroupRequest;
 import com.dailygames.hub.dto.FriendGroupResponse;
 import com.dailygames.hub.model.FriendGroup;
 import com.dailygames.hub.model.User;
@@ -67,7 +68,9 @@ class FriendGroupServiceTest {
     void createGroup_Success() {
         when(friendGroupRepository.save(any(FriendGroup.class))).thenReturn(group);
 
-        FriendGroupResponse result = friendGroupService.createGroup(owner, "Test Group");
+        FriendGroupRequest request = new FriendGroupRequest();
+        request.setName("Test Group");
+        FriendGroupResponse result = friendGroupService.createGroup(owner, request);
 
         assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("Test Group");
