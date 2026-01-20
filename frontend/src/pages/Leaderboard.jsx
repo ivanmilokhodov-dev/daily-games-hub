@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../services/api'
 
@@ -132,10 +133,10 @@ function Leaderboard() {
                 {game.scores.map((score, index) => (
                   <div key={score.id} className="leaderboard-item">
                     <div className="leaderboard-rank">#{index + 1}</div>
-                    <div className="leaderboard-user">
+                    <Link to={`/profile/${score.username}`} className="leaderboard-user">
                       <div className="name">{score.displayName}</div>
                       <div className="game">@{score.username}</div>
-                    </div>
+                    </Link>
                     <div className="leaderboard-score">
                       {score.solved !== null && (
                         <span

@@ -28,4 +28,10 @@ public interface ScoreRepository extends JpaRepository<Score, Long> {
 
     @Query("SELECT s FROM Score s WHERE s.user.id = :userId ORDER BY s.gameDate DESC, s.gameType")
     List<Score> findRecentByUser(@Param("userId") Long userId);
+
+    long countByGameType(GameType gameType);
+
+    long countByGameTypeAndGameDate(GameType gameType, LocalDate gameDate);
+
+    long countByGameDate(LocalDate gameDate);
 }

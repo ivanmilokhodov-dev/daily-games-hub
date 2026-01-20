@@ -60,4 +60,22 @@ public class FriendGroupController {
         friendGroupService.deleteGroup(user, groupId);
         return ResponseEntity.ok().build();
     }
+
+    @PutMapping("/{groupId}/rename")
+    public ResponseEntity<FriendGroupResponse> renameGroup(
+            @PathVariable Long groupId,
+            @RequestBody FriendGroupRequest request,
+            Authentication authentication) {
+        User user = userService.findByUsername(authentication.getName());
+        return ResponseEntity.ok(friendGroupService.renameGroup(user, groupId, request.getName()));
+    }
+
+    @DeleteMapping("/{groupId}/members/{memberId}")
+    public ResponseEntity<FriendGroupResponse> removeMember(
+            @PathVariable Long groupId,
+            @PathVariable Long memberId,
+            Authentication authentication) {
+        User user = userService.findByUsername(authentication.getName());
+        return ResponseEntity.ok(friendGroupService.removeMember(user, groupId, memberId));
+    }
 }

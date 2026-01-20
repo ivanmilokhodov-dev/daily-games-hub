@@ -1,14 +1,17 @@
 package com.dailygames.hub.model;
 
 public enum GameType {
-    WORDLE("Wordle", "https://www.nytimes.com/games/wordle/index.html", "Guess the 5-letter word in 6 tries"),
+    WORDLE("Wordle", "https://www.nytimes.com/games/wordle", "Guess the 5-letter word in 6 tries"),
     CONNECTIONS("Connections", "https://www.nytimes.com/games/connections", "Group 16 words into 4 categories"),
     CONTEXTO("Contexto", "https://contexto.me/", "Guess the word using semantic similarity"),
-    MINI_CROSSWORD("Mini Crossword", "https://www.nytimes.com/crosswords/game/mini", "Quick daily crossword puzzle"),
-    STRANDS("Strands", "https://www.nytimes.com/games/strands", "Find themed words in a letter grid"),
-    SPELLING_BEE("Spelling Bee", "https://www.nytimes.com/puzzles/spelling-bee", "Make words from 7 letters"),
-    QUORDLE("Quordle", "https://www.merriam-webster.com/games/quordle/", "Guess 4 words at once"),
-    NERDLE("Nerdle", "https://nerdlegame.com/", "Math equation guessing game");
+    SEMANTLE("Semantle", "https://semantle.com/", "Guess the word using word2vec similarity"),
+    HORSE("Horse", "https://enclose.horse/", "Claim the maximum territory with the number of walls given"),
+    TRAVLE("Travle", "https://travle.earth/", "Find the path between two countries"),
+    WORLDLE("Worldle", "https://worldle.teuteuf.fr/", "Guess the country from its shape"),
+    MINUTE_CRYPTIC("Minute Cryptic", "https://www.minutecryptic.com/", "Solve a cryptic crossword clue in under a minute"),
+    COUNTRYLE("Countryle", "https://countryle.com/", "Guess the country from clues"),
+    SPOTLE("Spotle", "https://spotle.io/", "Guess the artist from their top Spotify songs"),
+    BANDLE("Bandle", "https://bandle.app/", "Guess the song from increasing audio clips");
 
     private final String displayName;
     private final String url;

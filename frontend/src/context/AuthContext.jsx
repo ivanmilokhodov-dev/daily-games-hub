@@ -44,6 +44,17 @@ export function AuthProvider({ children }) {
     return userData
   }
 
+  const refreshUser = async () => {
+    try {
+      const response = await api.get('/api/auth/me')
+      const userData = response.data
+      localStorage.setItem('user', JSON.stringify(userData))
+      setUser(userData)
+    } catch (err) {
+      console.error('Failed to refresh user data')
+    }
+  }
+
   const logout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
@@ -56,6 +67,7 @@ export function AuthProvider({ children }) {
     login,
     register,
     logout,
+    refreshUser,
     isAuthenticated: !!user
   }
 

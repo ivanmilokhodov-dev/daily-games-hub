@@ -1,13 +1,18 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Navbar from './components/Navbar'
+import Guide from './components/Guide'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import SubmitScore from './pages/SubmitScore'
 import Groups from './pages/Groups'
-import Leaderboard from './pages/Leaderboard'
+import UserProfile from './pages/UserProfile'
+import Settings from './pages/Settings'
+import Admin from './pages/Admin'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 
 function PrivateRoute({ children }) {
   const { isAuthenticated, loading } = useAuth()
@@ -27,11 +32,14 @@ function App() {
   return (
     <>
       <Navbar />
+      <Guide />
       <main className="container">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/dashboard"
             element={
@@ -57,10 +65,26 @@ function App() {
             }
           />
           <Route
-            path="/leaderboard"
+            path="/profile/:username"
             element={
               <PrivateRoute>
-                <Leaderboard />
+                <UserProfile />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <PrivateRoute>
+                <Settings />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute>
+                <Admin />
               </PrivateRoute>
             }
           />

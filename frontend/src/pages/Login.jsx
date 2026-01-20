@@ -21,7 +21,12 @@ function Login() {
       await login(username, password)
       navigate('/dashboard')
     } catch (err) {
-      setError(err.response?.data?.message || t('auth.invalidCredentials'))
+      const errorData = err.response?.data
+      let errorMessage = errorData?.message || t('auth.invalidCredentials')
+      if (errorData?.errorCode) {
+        errorMessage += ` (${errorData.errorCode})`
+      }
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -74,6 +79,9 @@ function Login() {
         </form>
 
         <div className="auth-footer">
+          <Link to="/forgot-password" style={{ display: 'block', marginBottom: '0.5rem' }}>
+            {t('settings.forgotPassword')}
+          </Link>
           {t('auth.noAccount')} <Link to="/register">{t('nav.signup')}</Link>
         </div>
       </div>

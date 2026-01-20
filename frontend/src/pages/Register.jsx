@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
+import { useGuide } from '../context/GuideContext'
 
 function Register() {
   const { t } = useTranslation()
@@ -15,6 +16,7 @@ function Register() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { register } = useAuth()
+  const { showGuideForNewUser } = useGuide()
   const navigate = useNavigate()
 
   const handleChange = (e) => {
@@ -45,15 +47,25 @@ function Register() {
         formData.password,
         formData.displayName || formData.username
       )
+      showGuideForNewUser()
       navigate('/dashboard')
     } catch (err) {
       const errorData = err.response?.data
+      let errorMessage = ''
+
       if (errorData?.details) {
         const messages = Object.values(errorData.details).join(', ')
-        setError(messages)
+        errorMessage = messages
       } else {
-        setError(errorData?.message || t('auth.registrationFailed'))
+        errorMessage = errorData?.message || t('auth.registrationFailed')
       }
+
+      // Append error code if present for debugging
+      if (errorData?.errorCode) {
+        errorMessage += ` (${errorData.errorCode})`
+      }
+
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

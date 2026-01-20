@@ -8,99 +8,177 @@ function Groups() {
   const { user } = useAuth()
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showJoinModal, setShowJoinModal] = useState(false)
+  const [showRenameModal, setShowRenameModal] = useState(false)
+  const [showManageModal, setShowManageModal] = useState(false)
+  const [selectedGroup, setSelectedGroup] = useState(null)
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [groupScores, setGroupScores] = useState([])
+  const [scoresLoading, setScoresLoading] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
+  const [renameValue, setRenameValue] = useState('')
   const [inviteCode, setInviteCode] = useState('')
   const [error, setError] = useState('')
-  const [selectedGroupScores, setSelectedGroupScores] = useState({})
 
   useEffect(() => {
     fetchGroups()
   }, [])
 
+  useEffect(() => {
+    if (selectedGroup) {
+      fetchGroupScores(selectedGroup.id, selectedDate)
+    }
+  }, [selectedGroup, selectedDate])
+
   const fetchGroups = async () => {
     try {
+      setLoading(true)
       const response = await api.get('/api/groups')
-      setGroups(response.data)
+      setGroups(response.data || [])
     } catch (error) {
       console.error('Failed to fetch groups:', error)
+      setGroups([])
     } finally {
       setLoading(false)
     }
   }
 
-  const fetchGroupScores = async (groupId) => {
+  const fetchGroupScores = async (groupId, date) => {
     try {
-      const response = await api.get(`/api/scores/group/${groupId}`)
-      setSelectedGroupScores((prev) => ({ ...prev, [groupId]: response.data }))
+      setScoresLoading(true)
+      const response = await api.get(`/api/scores/group/${groupId}?date=${date}`)
+      setGroupScores(response.data || [])
     } catch (error) {
       console.error('Failed to fetch group scores:', error)
+      setGroupScores([])
+    } finally {
+      setScoresLoading(false)
     }
+  }
+
+  const getBestScoresPerGame = () => {
+    const gameScores = {}
+    groupScores.forEach(score => {
+      const gameType = score.gameType
+      if (!gameScores[gameType]) {
+        gameScores[gameType] = { gameName: score.gameDisplayName, scores: [] }
+      }
+      gameScores[gameType].scores.push(score)
+    })
+    Object.values(gameScores).forEach(game => {
+      game.scores.sort((a, b) => {
+        if (a.solved !== b.solved) return a.solved ? -1 : 1
+        if (a.attempts && b.attempts) return a.attempts - b.attempts
+        if (a.score && b.score) return b.score - a.score
+        return 0
+      })
+    })
+    return gameScores
   }
 
   const handleCreateGroup = async (e) => {
     e.preventDefault()
     setError('')
-
+    setActionLoading(true)
     try {
-      const response = await api.post('/api/groups', { name: newGroupName })
-      setGroups((prev) => [...prev, response.data])
+      await api.post('/api/groups', { name: newGroupName })
+      await fetchGroups()
       setShowCreateModal(false)
       setNewGroupName('')
     } catch (err) {
       setError(err.response?.data?.message || t('common.error'))
+    } finally {
+      setActionLoading(false)
     }
   }
 
   const handleJoinGroup = async (e) => {
     e.preventDefault()
     setError('')
-
+    setActionLoading(true)
     try {
-      const response = await api.post(`/api/groups/join/${inviteCode}`)
-      setGroups((prev) => [...prev, response.data])
+      await api.post(`/api/groups/join/${inviteCode}`)
+      await fetchGroups()
       setShowJoinModal(false)
       setInviteCode('')
     } catch (err) {
       setError(err.response?.data?.message || t('groups.invalidCode'))
+    } finally {
+      setActionLoading(false)
     }
   }
 
   const handleLeaveGroup = async (groupId) => {
     if (!confirm(t('groups.confirmLeave'))) return
-
+    setActionLoading(true)
     try {
       await api.delete(`/api/groups/${groupId}/leave`)
       setGroups((prev) => prev.filter((g) => g.id !== groupId))
+      if (selectedGroup?.id === groupId) setSelectedGroup(null)
     } catch (err) {
       setError(err.response?.data?.message || t('common.error'))
+    } finally {
+      setActionLoading(false)
     }
   }
 
   const handleDeleteGroup = async (groupId) => {
     if (!confirm(t('groups.confirmDelete'))) return
-
+    setActionLoading(true)
     try {
       await api.delete(`/api/groups/${groupId}`)
       setGroups((prev) => prev.filter((g) => g.id !== groupId))
+      if (selectedGroup?.id === groupId) setSelectedGroup(null)
     } catch (err) {
       setError(err.response?.data?.message || t('common.error'))
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleRenameGroup = async (e) => {
+    e.preventDefault()
+    setError('')
+    setActionLoading(true)
+    try {
+      const response = await api.put(`/api/groups/${selectedGroup.id}/rename`, { name: renameValue })
+      setGroups((prev) => prev.map((g) => g.id === selectedGroup.id ? response.data : g))
+      setSelectedGroup(response.data)
+      setShowRenameModal(false)
+    } catch (err) {
+      setError(err.response?.data?.message || t('common.error'))
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleRemoveMember = async (memberId) => {
+    if (!confirm(t('groups.confirmRemoveMember'))) return
+    setActionLoading(true)
+    try {
+      const response = await api.delete(`/api/groups/${selectedGroup.id}/members/${memberId}`)
+      setGroups((prev) => prev.map((g) => g.id === selectedGroup.id ? response.data : g))
+      setSelectedGroup(response.data)
+    } catch (err) {
+      setError(err.response?.data?.message || t('common.error'))
+    } finally {
+      setActionLoading(false)
     }
   }
 
   const copyInviteCode = (code) => {
     navigator.clipboard.writeText(code)
-    alert(t('groups.copied'))
   }
 
+  const isOwner = selectedGroup?.ownerUsername === user?.username
+
   if (loading) {
-    return (
-      <div className="loading">
-        <div className="spinner"></div>
-      </div>
-    )
+    return <div className="loading"><div className="spinner"></div></div>
   }
+
+  const bestScores = selectedGroup ? getBestScoresPerGame() : {}
 
   return (
     <div>
@@ -110,227 +188,323 @@ function Groups() {
       </div>
 
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-        <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
+        <button className="btn btn-primary" onClick={() => setShowCreateModal(true)} disabled={actionLoading}>
           {t('groups.createGroup')}
         </button>
-        <button className="btn btn-outline" onClick={() => setShowJoinModal(true)}>
+        <button className="btn btn-outline" onClick={() => setShowJoinModal(true)} disabled={actionLoading}>
           {t('groups.joinGroup')}
         </button>
       </div>
 
       {error && <div className="error-message">{error}</div>}
 
-      {groups.length > 0 ? (
-        <div className="grid grid-2">
-          {groups.map((group) => (
-            <div key={group.id} className="group-card">
-              <div className="group-header">
-                <h3>{group.name}</h3>
-                <div className="invite-code">
-                  {t('groups.inviteCode')}: {group.inviteCode}
-                  <button
-                    onClick={() => copyInviteCode(group.inviteCode)}
-                    style={{
-                      marginLeft: '0.5rem',
-                      background: 'none',
-                      border: 'none',
-                      color: 'white',
-                      cursor: 'pointer',
-                      textDecoration: 'underline'
-                    }}
-                  >
-                    {t('groups.copy')}
-                  </button>
-                </div>
-              </div>
-              <div className="group-members">
-                <div style={{ marginBottom: '0.5rem', fontWeight: '500' }}>
-                  {t('groups.members')} ({group.members.length})
-                </div>
-                <div className="member-list">
-                  {group.members.map((member) => (
-                    <span
-                      key={member.id}
-                      className={`member-badge ${
-                        member.username === group.ownerUsername ? 'owner' : ''
-                      }`}
-                    >
-                      {member.displayName || member.username}
-                      {member.username === group.ownerUsername && ` (${t('groups.owner')})`}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)' }}>
-                <button
-                  className="btn btn-small btn-outline"
-                  onClick={() => fetchGroupScores(group.id)}
-                  style={{ marginRight: '0.5rem' }}
+      <div style={{ display: 'grid', gridTemplateColumns: selectedGroup ? '1fr 2fr' : '1fr', gap: '1.5rem' }}>
+        <div>
+          {groups.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {groups.map((group) => (
+                <div
+                  key={group.id}
+                  className="card"
+                  style={{ cursor: 'pointer', border: selectedGroup?.id === group.id ? '2px solid var(--primary-color)' : undefined }}
+                  onClick={() => setSelectedGroup(group)}
                 >
-                  {t('groups.viewScores')}
-                </button>
-                {group.ownerUsername === user?.username ? (
-                  <button
-                    className="btn btn-small btn-danger"
-                    onClick={() => handleDeleteGroup(group.id)}
-                  >
-                    {t('common.delete')}
-                  </button>
-                ) : (
-                  <button
-                    className="btn btn-small btn-secondary"
-                    onClick={() => handleLeaveGroup(group.id)}
-                  >
-                    {t('groups.leave')}
-                  </button>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                    <div>
+                      <h3 style={{ margin: 0 }}>{group.name}</h3>
+                      <p style={{ margin: '0.25rem 0 0', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                        {group.memberCount || group.members?.length || 0} {t('groups.members').toLowerCase()}
+                        {group.groupStreak > 0 && (
+                          <span style={{ marginLeft: '0.75rem', color: 'var(--primary-color)' }}>
+                            {group.groupStreak} day streak
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        className="btn btn-small btn-outline"
+                        onClick={(e) => { e.stopPropagation(); copyInviteCode(group.inviteCode) }}
+                        disabled={actionLoading}
+                        title={group.inviteCode}
+                      >
+                        {t('groups.code')}
+                      </button>
+                      {group.ownerUsername === user?.username ? (
+                        <button
+                          className="btn btn-small btn-danger"
+                          onClick={(e) => { e.stopPropagation(); handleDeleteGroup(group.id) }}
+                          disabled={actionLoading}
+                        >
+                          {t('common.delete')}
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-small btn-secondary"
+                          onClick={(e) => { e.stopPropagation(); handleLeaveGroup(group.id) }}
+                          disabled={actionLoading}
+                        >
+                          {t('groups.leave')}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state card">
+              <h3>{t('groups.noGroups')}</h3>
+              <p>{t('groups.createFirst')}</p>
+            </div>
+          )}
+        </div>
+
+        {selectedGroup && (
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <h2 className="card-title">{selectedGroup.name}</h2>
+                {selectedGroup.groupStreak > 0 && (
+                  <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: 'var(--primary-color)' }}>
+                    {selectedGroup.groupStreak} day group streak (best: {selectedGroup.longestGroupStreak})
+                  </p>
                 )}
               </div>
-              {selectedGroupScores[group.id] && (
-                <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)' }}>
-                  <h4 style={{ marginBottom: '0.5rem' }}>{t('groups.todaysScores')}</h4>
-                  {selectedGroupScores[group.id].length > 0 ? (
-                    selectedGroupScores[group.id].map((score) => (
-                      <div key={score.id} className="leaderboard-item">
-                        <div className="leaderboard-user">
-                          <div className="name">{score.displayName}</div>
-                          <div className="game">{score.gameDisplayName}</div>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                {isOwner && (
+                  <>
+                    <button
+                      className="btn btn-small btn-outline"
+                      onClick={() => { setRenameValue(selectedGroup.name); setShowRenameModal(true) }}
+                    >
+                      Rename
+                    </button>
+                    <button
+                      className="btn btn-small btn-outline"
+                      onClick={() => setShowManageModal(true)}
+                    >
+                      Manage
+                    </button>
+                  </>
+                )}
+                <input
+                  type="date"
+                  className="form-input"
+                  style={{ width: 'auto' }}
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+            </div>
+
+            {/* Fun Facts Section */}
+            {selectedGroup.stats && (selectedGroup.stats.mostActiveToday || selectedGroup.stats.longestStreak || selectedGroup.stats.returningPlayer) && (
+              <div style={{
+                display: 'flex',
+                gap: '1rem',
+                marginBottom: '1rem',
+                padding: '0.75rem',
+                background: 'var(--hover-background)',
+                borderRadius: '0.5rem',
+                flexWrap: 'wrap'
+              }}>
+                {selectedGroup.stats.mostActiveToday && (
+                  <div style={{ flex: '1', minWidth: '150px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Most Active Today</div>
+                    <div style={{ fontWeight: '600' }}>{selectedGroup.stats.mostActiveToday}</div>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--primary-color)' }}>{selectedGroup.stats.mostActiveTodayGames} games</div>
+                  </div>
+                )}
+                {selectedGroup.stats.longestStreak && (
+                  <div style={{ flex: '1', minWidth: '150px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Longest Streak</div>
+                    <div style={{ fontWeight: '600' }}>{selectedGroup.stats.longestStreak}</div>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--primary-color)' }}>{selectedGroup.stats.longestStreakDays} days</div>
+                  </div>
+                )}
+                {selectedGroup.stats.returningPlayer && (
+                  <div style={{ flex: '1', minWidth: '150px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Welcome Back</div>
+                    <div style={{ fontWeight: '600' }}>{selectedGroup.stats.returningPlayer}</div>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--success-color)' }}>Returned today!</div>
+                  </div>
+                )}
+                {selectedGroup.stats.totalGamesToday > 0 && (
+                  <div style={{ flex: '1', minWidth: '150px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Games Today</div>
+                    <div style={{ fontWeight: '600', fontSize: '1.25rem', color: 'var(--primary-color)' }}>{selectedGroup.stats.totalGamesToday}</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{ marginBottom: '1rem' }}>
+              <strong>{t('groups.members')}:</strong>{' '}
+              {selectedGroup.members?.map((m, i) => (
+                <span key={m.id}>
+                  {m.displayName || m.username}
+                  {m.username === selectedGroup.ownerUsername && ` (${t('groups.owner')})`}
+                  {m.globalDayStreak > 0 && ` [${m.globalDayStreak}d]`}
+                  {i < selectedGroup.members.length - 1 && ', '}
+                </span>
+              ))}
+            </div>
+
+            <h3 style={{ marginBottom: '1rem' }}>{t('groups.todaysScores')}</h3>
+
+            {scoresLoading ? (
+              <div className="loading"><div className="spinner"></div></div>
+            ) : Object.keys(bestScores).length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {Object.entries(bestScores).map(([gameType, game]) => (
+                  <div key={gameType} style={{ padding: '1rem', background: 'var(--hover-background)', borderRadius: '0.5rem' }}>
+                    <h4 style={{ margin: '0 0 0.75rem', color: 'var(--primary-color)' }}>{game.gameName}</h4>
+                    {game.scores.map((score, index) => (
+                      <div
+                        key={score.id}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '0.5rem 0',
+                          borderTop: index > 0 ? '1px solid var(--border-color)' : undefined
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontWeight: index === 0 ? '700' : '400', color: index === 0 ? 'var(--primary-color)' : 'inherit' }}>
+                            #{index + 1}
+                          </span>
+                          <span>{score.displayName}</span>
                         </div>
-                        <div className="leaderboard-score">
+                        <div style={{ textAlign: 'right' }}>
                           {score.solved !== null && (
-                            <span
-                              style={{
-                                color: score.solved
-                                  ? 'var(--success-color)'
-                                  : 'var(--danger-color)'
-                              }}
-                            >
+                            <span style={{ color: score.solved ? 'var(--success-color)' : 'var(--danger-color)', fontWeight: '600' }}>
                               {score.solved ? t('dashboard.solved') : t('dashboard.failed')}
                             </span>
                           )}
-                          {score.attempts && <span> ({score.attempts})</span>}
+                          {score.attempts && (
+                            <span style={{ marginLeft: '0.5rem', color: 'var(--text-secondary)' }}>
+                              {score.attempts} tries
+                            </span>
+                          )}
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <p style={{ color: 'var(--text-secondary)' }}>{t('groups.noScoresToday')}</p>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="empty-state card">
-          <h3>{t('groups.noGroups')}</h3>
-          <p>{t('groups.createFirst')}</p>
-        </div>
-      )}
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ color: 'var(--text-secondary)' }}>{t('groups.noScoresToday')}</p>
+            )}
+          </div>
+        )}
+      </div>
 
+      {/* Create Modal */}
       {showCreateModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
-          }}
-          onClick={() => setShowCreateModal(false)}
-        >
-          <div
-            className="card"
-            style={{ width: '400px' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 style={{ marginBottom: '1rem' }}>{t('groups.createNew')}</h2>
-            <form onSubmit={handleCreateGroup}>
-              <div className="form-group">
-                <label className="form-label" htmlFor="groupName">
-                  {t('groups.groupName')}
-                </label>
-                <input
-                  type="text"
-                  id="groupName"
-                  className="form-input"
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  required
-                  maxLength={50}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <button type="submit" className="btn btn-primary">
-                  {t('common.create')}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowCreateModal(false)}
-                >
-                  {t('common.cancel')}
-                </button>
-              </div>
-            </form>
+        <div className="modal-overlay" onClick={() => !actionLoading && setShowCreateModal(false)}>
+          <div className="modal" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{t('groups.createNew')}</h2>
+              <button className="modal-close" onClick={() => setShowCreateModal(false)} disabled={actionLoading}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={handleCreateGroup}>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="groupName">{t('groups.groupName')}</label>
+                  <input type="text" id="groupName" className="form-input" value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} required maxLength={50} disabled={actionLoading} />
+                </div>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button type="submit" className="btn btn-primary" disabled={actionLoading}>{actionLoading ? t('common.loading') : t('common.create')}</button>
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowCreateModal(false)} disabled={actionLoading}>{t('common.cancel')}</button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
 
+      {/* Join Modal */}
       {showJoinModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
-          }}
-          onClick={() => setShowJoinModal(false)}
-        >
-          <div
-            className="card"
-            style={{ width: '400px' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 style={{ marginBottom: '1rem' }}>{t('groups.joinGroup')}</h2>
-            <form onSubmit={handleJoinGroup}>
-              <div className="form-group">
-                <label className="form-label" htmlFor="inviteCode">
-                  {t('groups.inviteCode')}
-                </label>
-                <input
-                  type="text"
-                  id="inviteCode"
-                  className="form-input"
-                  value={inviteCode}
-                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                  placeholder={t('groups.enterCode')}
-                  required
-                  maxLength={8}
-                />
+        <div className="modal-overlay" onClick={() => !actionLoading && setShowJoinModal(false)}>
+          <div className="modal" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{t('groups.joinGroup')}</h2>
+              <button className="modal-close" onClick={() => setShowJoinModal(false)} disabled={actionLoading}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={handleJoinGroup}>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="inviteCode">{t('groups.inviteCode')}</label>
+                  <input type="text" id="inviteCode" className="form-input" value={inviteCode} onChange={(e) => setInviteCode(e.target.value.toUpperCase())} placeholder={t('groups.enterCode')} required maxLength={8} disabled={actionLoading} />
+                </div>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button type="submit" className="btn btn-primary" disabled={actionLoading}>{actionLoading ? t('common.loading') : t('groups.join')}</button>
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowJoinModal(false)} disabled={actionLoading}>{t('common.cancel')}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rename Modal */}
+      {showRenameModal && (
+        <div className="modal-overlay" onClick={() => !actionLoading && setShowRenameModal(false)}>
+          <div className="modal" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Rename Group</h2>
+              <button className="modal-close" onClick={() => setShowRenameModal(false)} disabled={actionLoading}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={handleRenameGroup}>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="renameName">New Name</label>
+                  <input type="text" id="renameName" className="form-input" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} required maxLength={50} disabled={actionLoading} />
+                </div>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button type="submit" className="btn btn-primary" disabled={actionLoading}>{actionLoading ? t('common.loading') : 'Rename'}</button>
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowRenameModal(false)} disabled={actionLoading}>{t('common.cancel')}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Members Modal */}
+      {showManageModal && selectedGroup && (
+        <div className="modal-overlay" onClick={() => !actionLoading && setShowManageModal(false)}>
+          <div className="modal" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Manage Members</h2>
+              <button className="modal-close" onClick={() => setShowManageModal(false)} disabled={actionLoading}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {selectedGroup.members?.map((member) => (
+                  <div key={member.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'var(--hover-background)', borderRadius: '0.5rem' }}>
+                    <div>
+                      <span style={{ fontWeight: '500' }}>{member.displayName || member.username}</span>
+                      {member.username === selectedGroup.ownerUsername && (
+                        <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: 'var(--primary-color)' }}>Owner</span>
+                      )}
+                    </div>
+                    {member.username !== selectedGroup.ownerUsername && (
+                      <button
+                        className="btn btn-small btn-danger"
+                        onClick={() => handleRemoveMember(member.id)}
+                        disabled={actionLoading}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <button type="submit" className="btn btn-primary">
-                  {t('groups.join')}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowJoinModal(false)}
-                >
-                  {t('common.cancel')}
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
         </div>
       )}

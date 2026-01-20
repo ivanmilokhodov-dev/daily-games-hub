@@ -3,8 +3,10 @@ package com.dailygames.hub.service;
 import com.dailygames.hub.dto.ScoreRequest;
 import com.dailygames.hub.dto.ScoreResponse;
 import com.dailygames.hub.model.*;
+import com.dailygames.hub.repository.FriendGroupRepository;
 import com.dailygames.hub.repository.ScoreRepository;
 import com.dailygames.hub.repository.StreakRepository;
+import com.dailygames.hub.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,9 @@ public class ScoreService {
 
     private final ScoreRepository scoreRepository;
     private final StreakRepository streakRepository;
+    private final UserRepository userRepository;
+    private final FriendGroupRepository friendGroupRepository;
+    private final RatingService ratingService;
 
     @Transactional
     public ScoreResponse submitScore(User user, ScoreRequest request) {
@@ -41,10 +46,73 @@ public class ScoreService {
 
         Score saved = scoreRepository.save(score);
 
-        // Update streak
+        // Update game-specific streak
         updateStreak(user, request.getGameType(), gameDate);
 
+        // Update global day streak
+        updateGlobalDayStreak(user, gameDate);
+
+        // Update rating
+        ratingService.updateRating(user, request.getGameType(),
+            Boolean.TRUE.equals(request.getSolved()),
+            request.getAttempts() != null ? request.getAttempts() : 1);
+
+        // Update group streaks for all groups the user is in
+        updateGroupStreaks(user, gameDate);
+
         return mapToResponse(saved);
+    }
+
+    private void updateGroupStreaks(User user, LocalDate gameDate) {
+        List<FriendGroup> userGroups = friendGroupRepository.findByMember(user);
+        for (FriendGroup group : userGroups) {
+            LocalDate lastActive = group.getLastActiveDate();
+
+            if (lastActive == null) {
+                group.setGroupStreak(1);
+                group.setLongestGroupStreak(1);
+            } else if (lastActive.equals(gameDate)) {
+                // Already counted for today
+                continue;
+            } else if (lastActive.plusDays(1).equals(gameDate)) {
+                // Consecutive day
+                group.setGroupStreak(group.getGroupStreak() + 1);
+                if (group.getGroupStreak() > group.getLongestGroupStreak()) {
+                    group.setLongestGroupStreak(group.getGroupStreak());
+                }
+            } else {
+                // Streak broken
+                group.setGroupStreak(1);
+            }
+
+            group.setLastActiveDate(gameDate);
+            friendGroupRepository.save(group);
+        }
+    }
+
+    private void updateGlobalDayStreak(User user, LocalDate gameDate) {
+        LocalDate lastActive = user.getLastActiveDate();
+
+        if (lastActive == null) {
+            // First game ever
+            user.setGlobalDayStreak(1);
+            user.setLongestGlobalStreak(1);
+        } else if (lastActive.equals(gameDate)) {
+            // Already played today, no change to streak
+            return;
+        } else if (lastActive.plusDays(1).equals(gameDate)) {
+            // Consecutive day
+            user.setGlobalDayStreak(user.getGlobalDayStreak() + 1);
+            if (user.getGlobalDayStreak() > user.getLongestGlobalStreak()) {
+                user.setLongestGlobalStreak(user.getGlobalDayStreak());
+            }
+        } else {
+            // Streak broken
+            user.setGlobalDayStreak(1);
+        }
+
+        user.setLastActiveDate(gameDate);
+        userRepository.save(user);
     }
 
     private void updateStreak(User user, GameType gameType, LocalDate gameDate) {

@@ -42,4 +42,35 @@ public class UserService {
         return userRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
+
+    @Transactional
+    public User updateProfile(User user, String displayName, String email) {
+        if (email != null && !email.equals(user.getEmail())) {
+            if (userRepository.existsByEmail(email)) {
+                throw new IllegalArgumentException("Email already exists");
+            }
+            user.setEmail(email);
+        }
+        if (displayName != null) {
+            user.setDisplayName(displayName);
+        }
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public void changePassword(User user, String currentPassword, String newPassword) {
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Incorrect current password");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    public long countUsers() {
+        return userRepository.count();
+    }
+
+    public long countActiveToday(java.time.LocalDate today) {
+        return userRepository.countByLastActiveDate(today);
+    }
 }

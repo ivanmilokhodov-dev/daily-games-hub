@@ -3,14 +3,16 @@ package com.dailygames.hub.service;
 import com.dailygames.hub.dto.FriendGroupRequest;
 import com.dailygames.hub.dto.FriendGroupResponse;
 import com.dailygames.hub.model.FriendGroup;
+import com.dailygames.hub.model.Score;
 import com.dailygames.hub.model.User;
 import com.dailygames.hub.repository.FriendGroupRepository;
+import com.dailygames.hub.repository.ScoreRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.UUID;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 public class FriendGroupService {
 
     private final FriendGroupRepository friendGroupRepository;
+    private final ScoreRepository scoreRepository;
 
     @Transactional
     public FriendGroupResponse createGroup(User owner, FriendGroupRequest request) {
@@ -47,7 +50,7 @@ public class FriendGroupService {
 
     @Transactional
     public void leaveGroup(User user, Long groupId) {
-        FriendGroup group = friendGroupRepository.findById(groupId)
+        FriendGroup group = friendGroupRepository.findByIdWithMembers(groupId)
             .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
         if (group.getOwner().equals(user)) {
@@ -60,30 +63,112 @@ public class FriendGroupService {
 
     @Transactional
     public void deleteGroup(User user, Long groupId) {
-        FriendGroup group = friendGroupRepository.findById(groupId)
+        FriendGroup group = friendGroupRepository.findByIdWithMembers(groupId)
             .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
         if (!group.getOwner().equals(user)) {
             throw new IllegalArgumentException("Only the owner can delete this group");
         }
 
+        // Remove the group from all members' friendGroups set (bidirectional sync)
+        for (User member : new HashSet<>(group.getMembers())) {
+            member.getFriendGroups().remove(group);
+        }
+
+        // Clear members from this group
+        group.getMembers().clear();
+
+        // Flush to ensure junction table is cleared before delete
+        friendGroupRepository.saveAndFlush(group);
+
+        // Now delete the group
         friendGroupRepository.delete(group);
     }
 
+    @Transactional(readOnly = true)
     public List<FriendGroupResponse> getUserGroups(User user) {
         return friendGroupRepository.findByMember(user).stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public FriendGroup getGroupById(Long groupId) {
-        return friendGroupRepository.findById(groupId)
+        return friendGroupRepository.findByIdWithMembers(groupId)
             .orElseThrow(() -> new IllegalArgumentException("Group not found"));
     }
 
+    @Transactional(readOnly = true)
     public List<User> getGroupMembers(Long groupId) {
-        FriendGroup group = getGroupById(groupId);
+        FriendGroup group = friendGroupRepository.findByIdWithMembers(groupId)
+            .orElseThrow(() -> new IllegalArgumentException("Group not found"));
         return List.copyOf(group.getMembers());
+    }
+
+    @Transactional
+    public FriendGroupResponse renameGroup(User user, Long groupId, String newName) {
+        FriendGroup group = friendGroupRepository.findByIdWithMembers(groupId)
+            .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        if (!group.getOwner().equals(user)) {
+            throw new IllegalArgumentException("Only the owner can rename this group");
+        }
+
+        group.setName(newName);
+        FriendGroup saved = friendGroupRepository.save(group);
+        return mapToResponse(saved);
+    }
+
+    @Transactional
+    public FriendGroupResponse removeMember(User owner, Long groupId, Long memberId) {
+        FriendGroup group = friendGroupRepository.findByIdWithMembers(groupId)
+            .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        if (!group.getOwner().equals(owner)) {
+            throw new IllegalArgumentException("Only the owner can remove members");
+        }
+
+        User memberToRemove = group.getMembers().stream()
+            .filter(m -> m.getId().equals(memberId))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Member not found in group"));
+
+        if (memberToRemove.equals(owner)) {
+            throw new IllegalArgumentException("Owner cannot be removed from the group");
+        }
+
+        group.getMembers().remove(memberToRemove);
+        memberToRemove.getFriendGroups().remove(group);
+        FriendGroup saved = friendGroupRepository.save(group);
+        return mapToResponse(saved);
+    }
+
+    @Transactional
+    public void updateGroupStreak(Long groupId, LocalDate gameDate) {
+        FriendGroup group = friendGroupRepository.findByIdWithMembers(groupId)
+            .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        LocalDate lastActive = group.getLastActiveDate();
+
+        if (lastActive == null) {
+            group.setGroupStreak(1);
+            group.setLongestGroupStreak(1);
+        } else if (lastActive.equals(gameDate)) {
+            // Already counted for today
+            return;
+        } else if (lastActive.plusDays(1).equals(gameDate)) {
+            // Consecutive day
+            group.setGroupStreak(group.getGroupStreak() + 1);
+            if (group.getGroupStreak() > group.getLongestGroupStreak()) {
+                group.setLongestGroupStreak(group.getGroupStreak());
+            }
+        } else {
+            // Streak broken
+            group.setGroupStreak(1);
+        }
+
+        group.setLastActiveDate(gameDate);
+        friendGroupRepository.save(group);
     }
 
     private String generateInviteCode() {
@@ -96,16 +181,92 @@ public class FriendGroupService {
         response.setName(group.getName());
         response.setInviteCode(group.getInviteCode());
         response.setOwnerUsername(group.getOwner().getUsername());
+        response.setOwnerId(group.getOwner().getId());
         response.setCreatedAt(group.getCreatedAt());
-        response.setMembers(group.getMembers().stream()
+        response.setGroupStreak(group.getGroupStreak());
+        response.setLongestGroupStreak(group.getLongestGroupStreak());
+
+        List<FriendGroupResponse.MemberInfo> memberList = group.getMembers().stream()
             .map(member -> {
                 FriendGroupResponse.MemberInfo info = new FriendGroupResponse.MemberInfo();
                 info.setId(member.getId());
                 info.setUsername(member.getUsername());
                 info.setDisplayName(member.getDisplayName());
+                info.setGlobalDayStreak(member.getGlobalDayStreak());
                 return info;
             })
-            .collect(Collectors.toList()));
+            .collect(Collectors.toList());
+        response.setMembers(memberList);
+        response.setMemberCount(memberList.size());
+
+        // Calculate group stats
+        response.setStats(calculateGroupStats(group));
+
         return response;
+    }
+
+    private FriendGroupResponse.GroupStats calculateGroupStats(FriendGroup group) {
+        FriendGroupResponse.GroupStats stats = new FriendGroupResponse.GroupStats();
+        LocalDate today = LocalDate.now();
+        List<User> members = new ArrayList<>(group.getMembers());
+
+        if (members.isEmpty()) {
+            return stats;
+        }
+
+        // Get today's scores for all members
+        List<Score> todayScores = scoreRepository.findByUsersAndDate(members, today);
+
+        // Most active today (most games played)
+        Map<User, Long> gamesPerUser = todayScores.stream()
+            .collect(Collectors.groupingBy(Score::getUser, Collectors.counting()));
+
+        if (!gamesPerUser.isEmpty()) {
+            Map.Entry<User, Long> mostActive = gamesPerUser.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .orElse(null);
+            if (mostActive != null) {
+                stats.setMostActiveToday(mostActive.getKey().getDisplayName() != null ?
+                    mostActive.getKey().getDisplayName() : mostActive.getKey().getUsername());
+                stats.setMostActiveTodayGames(mostActive.getValue().intValue());
+            }
+        }
+
+        stats.setTotalGamesToday(todayScores.size());
+
+        // Longest streak among members
+        User longestStreakUser = members.stream()
+            .max(Comparator.comparingInt(User::getGlobalDayStreak))
+            .orElse(null);
+        if (longestStreakUser != null && longestStreakUser.getGlobalDayStreak() > 0) {
+            stats.setLongestStreak(longestStreakUser.getDisplayName() != null ?
+                longestStreakUser.getDisplayName() : longestStreakUser.getUsername());
+            stats.setLongestStreakDays(longestStreakUser.getGlobalDayStreak());
+        }
+
+        // Returning player (played today after not playing yesterday)
+        for (User member : members) {
+            LocalDate lastActive = member.getLastActiveDate();
+            if (lastActive != null && lastActive.equals(today)) {
+                // Check if they were inactive for more than 1 day before today
+                List<Score> recentScores = scoreRepository.findRecentByUser(member.getId());
+                if (recentScores.size() >= 2) {
+                    LocalDate secondLastDate = recentScores.stream()
+                        .map(Score::getGameDate)
+                        .distinct()
+                        .sorted(Comparator.reverseOrder())
+                        .skip(1)
+                        .findFirst()
+                        .orElse(null);
+                    if (secondLastDate != null && !secondLastDate.equals(today.minusDays(1))) {
+                        stats.setReturningPlayer(member.getDisplayName() != null ?
+                            member.getDisplayName() : member.getUsername());
+                        break;
+                    }
+                }
+            }
+        }
+
+        return stats;
     }
 }

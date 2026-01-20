@@ -83,11 +83,7 @@ function Dashboard() {
               {streaks.map((streak) => (
                 <div
                   key={streak.gameType}
-                  style={{
-                    padding: '1rem',
-                    backgroundColor: '#f8fafc',
-                    borderRadius: '0.5rem'
-                  }}
+                  className="streak-card"
                 >
                   <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>
                     {streak.gameDisplayName}
