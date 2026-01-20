@@ -24,7 +24,7 @@ public class RatingService {
     private static final int BASE_RATING = 1000;
 
     @Transactional
-    public void updateRating(User user, GameType gameType, boolean solved, int attempts) {
+    public void updateRating(User user, GameType gameType, boolean solved, int attempts, Integer score) {
         Rating rating = ratingRepository.findByUserAndGameType(user, gameType)
             .orElseGet(() -> {
                 Rating newRating = new Rating();
@@ -38,18 +38,28 @@ public class RatingService {
 
         rating.setGamesPlayed(rating.getGamesPlayed() + 1);
 
-        if (solved) {
+        // Symmetric MMR: perfect score gives +K_FACTOR, worst score gives -K_FACTOR
+        int maxAttempts = getMaxAttemptsForGame(gameType);
+        int ratingChange;
+
+        // Special handling for Horse game - always solved, score-based (higher is better)
+        if (gameType == GameType.HORSE && score != null) {
             rating.setGamesWon(rating.getGamesWon() + 1);
-            // ELO-like calculation: more points for fewer attempts
-            int maxAttempts = getMaxAttemptsForGame(gameType);
-            double performance = 1.0 - ((double) (attempts - 1) / maxAttempts);
-            int ratingChange = (int) (K_FACTOR * performance);
-            rating.setRating(Math.max(0, rating.getRating() + ratingChange));
+            // Score is 0-100, convert to performance (-1 to +1 range, where 100 = +1, 0 = -1)
+            double performance = (score - 50.0) / 50.0;
+            ratingChange = (int) (K_FACTOR * performance);
+        } else if (solved) {
+            rating.setGamesWon(rating.getGamesWon() + 1);
+            // Symmetric: perfect (1 attempt) = +K_FACTOR, worst solved (max attempts) = 0
+            // performance ranges from 1.0 (perfect) to 0.0 (worst solved)
+            double performance = 1.0 - ((double) (attempts - 1) / (maxAttempts - 1));
+            ratingChange = (int) (K_FACTOR * performance);
         } else {
-            // Lost: decrease rating
-            rating.setRating(Math.max(0, rating.getRating() - K_FACTOR / 2));
+            // Failed: always -K_FACTOR (symmetric with perfect score which gives +K_FACTOR)
+            ratingChange = -K_FACTOR;
         }
 
+        rating.setRating(Math.max(0, rating.getRating() + ratingChange));
         ratingRepository.save(rating);
 
         // Update user's average rating
@@ -65,11 +75,10 @@ public class RatingService {
             case BANDLE -> 6;
             case TRAVLE -> 10;
             case COUNTRYLE -> 6;
-            case WORLDLE -> 6;
-            case MINUTE_CRYPTIC -> 1;
+            case MINUTE_CRYPTIC -> 12; // Max hints before it's considered poor
             case CONTEXTO -> 100;
             case SEMANTLE -> 100;
-            case HORSE -> 10;
+            case HORSE -> 100; // Score-based, not attempt-based
         };
     }
 

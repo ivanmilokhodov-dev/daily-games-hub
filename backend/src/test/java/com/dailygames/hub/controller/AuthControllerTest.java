@@ -20,14 +20,20 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.web.servlet.MockMvc;
 
+import org.springframework.context.annotation.Import;
+import com.dailygames.hub.config.SecurityConfig;
+import com.dailygames.hub.config.JwtAuthFilter;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
+@Import({SecurityConfig.class, JwtAuthFilter.class})
 class AuthControllerTest {
 
     @Autowired
@@ -86,6 +92,7 @@ class AuthControllerTest {
         when(jwtUtil.generateToken("newuser")).thenReturn("jwt-token");
 
         mockMvc.perform(post("/api/auth/register")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -108,6 +115,7 @@ class AuthControllerTest {
         when(jwtUtil.generateToken("testuser")).thenReturn("jwt-token");
 
         mockMvc.perform(post("/api/auth/login")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -120,6 +128,7 @@ class AuthControllerTest {
     @DisplayName("Should handle forgot password request")
     void forgotPassword_Success() throws Exception {
         mockMvc.perform(post("/api/auth/forgot-password")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\":\"test@example.com\"}"))
             .andExpect(status().isOk())
@@ -135,6 +144,7 @@ class AuthControllerTest {
         request.setPassword("123"); // Too short
 
         mockMvc.perform(post("/api/auth/register")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest());

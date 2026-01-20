@@ -51,7 +51,7 @@ function Home() {
             <div className="spinner"></div>
           </div>
         ) : (
-          <div className="grid grid-4">
+          <div className="games-grid-centered">
             {games.map((game) => (
               <div key={game.id} className="game-card">
                 <h3>{game.name}</h3>

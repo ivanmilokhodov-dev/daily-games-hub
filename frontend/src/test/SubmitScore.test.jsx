@@ -57,11 +57,11 @@ describe('SubmitScore Page', () => {
     renderSubmitScore()
 
     await waitFor(() => {
-      expect(screen.getByText(/submit score/i)).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: /submit score/i })).toBeInTheDocument()
     })
 
     expect(screen.getByRole('textbox')).toBeInTheDocument()
-    expect(screen.getByRole('combobox')).toBeInTheDocument()
+    expect(screen.getByLabelText(/game/i)).toBeInTheDocument()
   })
 
   it('should fetch and display games', async () => {
@@ -76,7 +76,7 @@ describe('SubmitScore Page', () => {
     renderSubmitScore()
 
     await waitFor(() => {
-      expect(screen.getByRole('combobox')).toBeInTheDocument()
+      expect(screen.getByLabelText(/game/i)).toBeInTheDocument()
     })
 
     const textarea = screen.getByRole('textbox')
@@ -101,13 +101,13 @@ describe('SubmitScore Page', () => {
     renderSubmitScore()
 
     await waitFor(() => {
-      expect(screen.getByRole('combobox')).toBeInTheDocument()
+      expect(screen.getByLabelText(/game/i)).toBeInTheDocument()
     })
 
     const textarea = screen.getByRole('textbox')
     await userEvent.type(textarea, 'Wordle 123 4/6')
 
-    const select = screen.getByRole('combobox')
+    const select = screen.getByLabelText(/game/i)
     await userEvent.selectOptions(select, 'WORDLE')
 
     const submitButton = screen.getByRole('button', { name: /submit/i })
@@ -128,13 +128,13 @@ describe('SubmitScore Page', () => {
     renderSubmitScore()
 
     await waitFor(() => {
-      expect(screen.getByRole('combobox')).toBeInTheDocument()
+      expect(screen.getByLabelText(/game/i)).toBeInTheDocument()
     })
 
     const textarea = screen.getByRole('textbox')
     await userEvent.type(textarea, 'Wordle 123 4/6')
 
-    const select = screen.getByRole('combobox')
+    const select = screen.getByLabelText(/game/i)
     await userEvent.selectOptions(select, 'WORDLE')
 
     const submitButton = screen.getByRole('button', { name: /submit/i })

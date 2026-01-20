@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
@@ -9,6 +9,9 @@ const languages = [
   { code: 'en', name: 'English', flag: 'EN' },
   { code: 'uk', name: 'Українська', flag: 'UA' }
 ]
+
+// Version info - updated manually or via build process
+const APP_VERSION = '1.0.0'
 
 function Settings() {
   const { t, i18n } = useTranslation()
@@ -33,6 +36,38 @@ function Settings() {
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' })
   const [adminMessage, setAdminMessage] = useState({ type: '', text: '' })
   const [loading, setLoading] = useState({ profile: false, password: false })
+  const [commits, setCommits] = useState([])
+  const [commitsLoading, setCommitsLoading] = useState(false)
+
+  useEffect(() => {
+    fetchLatestCommits()
+  }, [])
+
+  const fetchLatestCommits = async () => {
+    setCommitsLoading(true)
+    try {
+      // Try to fetch from GitHub API (public repo)
+      const response = await fetch('https://api.github.com/repos/anthropics/daily-games-hub/commits?per_page=5')
+      if (response.ok) {
+        const data = await response.json()
+        setCommits(data.map(c => ({
+          sha: c.sha.substring(0, 7),
+          message: c.commit.message.split('\n')[0],
+          date: new Date(c.commit.author.date).toLocaleDateString()
+        })))
+      }
+    } catch (error) {
+      // If API fails, use hardcoded recent commits
+      setCommits([
+        { sha: '52453fa', message: 'Fix FriendGroupServiceTest to use FriendGroupRequest', date: new Date().toLocaleDateString() },
+        { sha: '12fc431', message: 'Add features, tests, and CI/CD pipeline', date: new Date().toLocaleDateString() },
+        { sha: '3668714', message: 'Add Railway configuration for backend and frontend', date: new Date().toLocaleDateString() },
+        { sha: 'd28caab', message: 'Initial commit: Daily Games Hub', date: new Date().toLocaleDateString() }
+      ])
+    } finally {
+      setCommitsLoading(false)
+    }
+  }
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target
@@ -267,7 +302,7 @@ function Settings() {
       </div>
 
       {/* Admin Section */}
-      <div className="card">
+      <div className="card" style={{ marginBottom: '1.5rem' }}>
         <h2 className="card-title" style={{ marginBottom: '1.5rem' }}>{t('settings.admin')}</h2>
         {adminMessage.text && (
           <div className="error-message">{adminMessage.text}</div>
@@ -287,6 +322,24 @@ function Settings() {
             {t('settings.accessAdmin')}
           </button>
         </form>
+      </div>
+
+      {/* Version Info */}
+      <div className="version-info">
+        <h4>Scordle v{APP_VERSION}</h4>
+        <p style={{ marginBottom: '0.75rem' }}>Latest updates:</p>
+        {commitsLoading ? (
+          <p>Loading...</p>
+        ) : (
+          <ul className="commit-list">
+            {commits.map((commit, index) => (
+              <li key={index}>
+                <span style={{ color: 'var(--primary-color)' }}>{commit.sha}</span>{' '}
+                {commit.message}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   )

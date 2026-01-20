@@ -82,94 +82,101 @@ function SubmitScore() {
       })
       updates.solved = String(solvedCategories === 4)
     }
-    // Spotle - Spotify artist guessing
+    // Spotle - Spotify artist guessing (10 guesses max)
+    // Example: Spotle #1362🎧 ⬜️⬜️⬜️⬜️⬜️⬜️⬜️🟩 or ⬜⬜⬜⬜⬜⬜⬜⬜⬜❌
     else if (result.includes('spotle') || result.includes('#spotle')) {
       updates.gameType = 'SPOTLE'
-      const match = rawResult.match(/(\d+)\/\d+/)
-      if (match) {
-        updates.attempts = match[1]
-        updates.solved = 'true'
+      // Count emoji squares to determine attempts
+      const squares = rawResult.match(/[⬜️⬜🟩❌]/g) || []
+      if (squares.length > 0) {
+        updates.attempts = String(squares.length)
       }
-      if (result.includes('x/') || result.includes('❌')) {
+      // Check for fail (❌) or success (🟩)
+      if (rawResult.includes('❌') || result.includes('x/')) {
         updates.solved = 'false'
+        updates.attempts = '10'
+      } else if (rawResult.includes('🟩')) {
+        updates.solved = 'true'
       }
     }
-    // Bandle - song guessing from clips
+    // Bandle - song guessing from clips (6 guesses max)
+    // Example: Bandle #1252 x/6 or Bandle #1252 5/6
     else if (result.includes('bandle') || result.includes('#bandle')) {
       updates.gameType = 'BANDLE'
-      const match = rawResult.match(/(\d+)\/\d+/)
+      const match = rawResult.match(/(\d+|x)\/6/i)
       if (match) {
-        updates.attempts = match[1]
-        updates.solved = 'true'
-      }
-      if (result.includes('x/') || result.includes('❌')) {
-        updates.solved = 'false'
+        const attempts = match[1].toLowerCase()
+        if (attempts === 'x') {
+          updates.solved = 'false'
+          updates.attempts = '6'
+        } else {
+          updates.solved = 'true'
+          updates.attempts = attempts
+        }
       }
     }
     // Travle - country path finding
+    // Example: #travle #1133 +2 (the +X is extra moves from perfect, 0 is perfect)
     else if (result.includes('travle') || result.includes('#travle')) {
       updates.gameType = 'TRAVLE'
-      // Look for +X pattern (extra guesses)
+      // Look for +X pattern (extra guesses from perfect)
       const plusMatch = rawResult.match(/\+(\d+)/)
       if (plusMatch) {
         updates.attempts = plusMatch[1]
         updates.solved = 'true'
       }
-      // Perfect score
-      if (rawResult.includes('✅') || result.includes('perfect')) {
+      // Perfect score (no +X means 0)
+      if (rawResult.includes('✅') && !plusMatch) {
         updates.solved = 'true'
         updates.attempts = '0'
       }
-      if (result.includes('❌') || result.includes('gave up')) {
+      // Check for perfect with +0
+      if (result.includes('(perfect)') || rawResult.match(/\+0\b/)) {
+        updates.attempts = '0'
+        updates.solved = 'true'
+      }
+      if (rawResult.includes('❌') || result.includes('gave up')) {
         updates.solved = 'false'
       }
     }
     // Countryle - country guessing
+    // Example: #Countryle 1432 Guessed in 9 tries.
     else if (result.includes('countryle') || result.includes('#countryle')) {
       updates.gameType = 'COUNTRYLE'
-      const match = rawResult.match(/(\d+)\/\d+/)
-      if (match) {
-        updates.attempts = match[1]
+      // Look for "Guessed in X tries"
+      const guessMatch = rawResult.match(/guessed in (\d+) tries?/i)
+      if (guessMatch) {
+        updates.attempts = guessMatch[1]
         updates.solved = 'true'
       }
-      // Count flag emojis or guess lines
-      const lines = rawResult.split('\n').filter(line => line.trim().length > 0)
-      if (!updates.attempts && lines.length > 1) {
-        updates.attempts = String(lines.length - 1)
+      // Also check X/6 format
+      const ratioMatch = rawResult.match(/(\d+)\/\d+/)
+      if (!updates.attempts && ratioMatch) {
+        updates.attempts = ratioMatch[1]
+        updates.solved = 'true'
       }
       if (result.includes('❌') || result.includes('x/')) {
         updates.solved = 'false'
-      } else if (!updates.solved) {
-        updates.solved = 'true'
       }
     }
-    // Worldle - country shape guessing
-    else if (result.includes('worldle') || result.includes('#worldle')) {
-      updates.gameType = 'WORLDLE'
-      const match = rawResult.match(/(\d+)\/\d+/)
-      if (match) {
-        updates.attempts = match[1]
-        updates.solved = 'true'
-      }
-      if (result.includes('x/') || result.includes('❌')) {
-        updates.solved = 'false'
-      }
-    }
-    // Minute Cryptic - cryptic crossword
+    // Minute Cryptic - cryptic crossword clue
+    // Example: 🏋 11 hints – 9 over the community par or 🏆 0 hints – perfect!
     else if (result.includes('minute cryptic') || result.includes('minutecryptic')) {
       updates.gameType = 'MINUTE_CRYPTIC'
-      // Look for time in format like "0:45" or "45s"
-      const timeMatch = rawResult.match(/(\d+):(\d+)/) || rawResult.match(/(\d+)s/)
-      if (timeMatch) {
-        if (timeMatch[2]) {
-          updates.timeSeconds = String(parseInt(timeMatch[1]) * 60 + parseInt(timeMatch[2]))
-        } else {
-          updates.timeSeconds = timeMatch[1]
-        }
+      // Look for number of hints
+      const hintMatch = rawResult.match(/(\d+)\s*hints?/i)
+      if (hintMatch) {
+        updates.attempts = hintMatch[1]
         updates.solved = 'true'
       }
-      if (result.includes('❌') || result.includes('fail')) {
-        updates.solved = 'false'
+      // If we see 🏆 or "0 hints", it's a perfect game
+      if (rawResult.includes('🏆') || (hintMatch && hintMatch[1] === '0')) {
+        updates.attempts = '0'
+        updates.solved = 'true'
+      }
+      // All minute cryptic games are solved (you always get the answer eventually)
+      if (!updates.solved) {
+        updates.solved = 'true'
       }
     }
     // Contexto - semantic word guessing
@@ -186,25 +193,37 @@ function SubmitScore() {
       }
     }
     // Semantle - word2vec word guessing
+    // Example: Semantle #1452 ✅ 21 Guesses 🥈 999/1000 💡 22 Hints
     else if (result.includes('semantle') || result.includes('#semantle')) {
       updates.gameType = 'SEMANTLE'
-      const match = rawResult.match(/(\d+)\s*(guesses|guess)/i)
-      if (match) {
-        updates.attempts = match[1]
+      const guessMatch = rawResult.match(/(\d+)\s*(guesses|guess)/i)
+      const hintMatch = rawResult.match(/(\d+)\s*hints?/i)
+
+      let totalAttempts = 0
+      if (guessMatch) {
+        totalAttempts += parseInt(guessMatch[1])
+      }
+      if (hintMatch) {
+        // Each hint counts as 5 guesses
+        totalAttempts += parseInt(hintMatch[1]) * 5
+      }
+      if (totalAttempts > 0) {
+        updates.attempts = String(totalAttempts)
         updates.solved = 'true'
       }
       if (result.includes('gave up') || result.includes('❌')) {
         updates.solved = 'false'
       }
     }
-    // Horse (enclose.horse) - territory game
+    // Horse (enclose.horse) - territory game, percentage based, higher is better
+    // Example: https://enclose.horse Day 22 💎 PERFECT! 💎 100%
     else if (result.includes('horse') || result.includes('enclose')) {
       updates.gameType = 'HORSE'
-      // Look for score/percentage pattern
-      const scoreMatch = rawResult.match(/(\d+)%/) || rawResult.match(/score[:\s]*(\d+)/i)
+      // Look for percentage
+      const scoreMatch = rawResult.match(/(\d+)%/)
       if (scoreMatch) {
         updates.score = scoreMatch[1]
-        updates.solved = 'true'
+        updates.solved = 'true' // Horse is always solved
       }
     }
 
@@ -255,6 +274,12 @@ function SubmitScore() {
     } catch (err) {
       const errorData = err.response?.data
       let errorMessage = errorData?.message || t('submit.submitFailed')
+
+      // Check for duplicate submission error
+      if (errorMessage.includes('already submitted') || errorMessage.includes('already have a score')) {
+        errorMessage = 'You can only submit one score per game per day. You have already submitted a score for this game today.'
+      }
+
       if (errorData?.errorCode) {
         errorMessage += ` (${errorData.errorCode})`
       }

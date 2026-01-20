@@ -12,12 +12,17 @@ function Navbar() {
   const { openGuide } = useGuide()
   const navigate = useNavigate()
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const menuRef = useRef(null)
+  const mobileMenuRef = useRef(null)
 
   useEffect(() => {
     function handleClickOutside(event) {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setShowUserMenu(false)
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+        setShowMobileMenu(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -26,16 +31,56 @@ function Navbar() {
 
   const handleLogout = () => {
     setShowUserMenu(false)
+    setShowMobileMenu(false)
     logout()
     navigate('/')
+  }
+
+  const closeMobileMenu = () => {
+    setShowMobileMenu(false)
   }
 
   return (
     <nav className="navbar">
       <div className="container">
+        {/* Mobile hamburger button - only visible on mobile when authenticated */}
+        {isAuthenticated && (
+          <div className="mobile-menu-container" ref={mobileMenuRef}>
+            <button
+              className="hamburger-btn"
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              aria-label="Menu"
+            >
+              <span className="hamburger-line"></span>
+              <span className="hamburger-line"></span>
+              <span className="hamburger-line"></span>
+            </button>
+
+            {showMobileMenu && (
+              <div className="mobile-dropdown">
+                <NavLink to="/" onClick={closeMobileMenu}>{t('nav.home')}</NavLink>
+                <NavLink to="/dashboard" onClick={closeMobileMenu}>{t('nav.dashboard')}</NavLink>
+                <NavLink to="/groups" onClick={closeMobileMenu}>{t('nav.groups')}</NavLink>
+                <NavLink to="/submit" onClick={closeMobileMenu}>{t('nav.submitScore')}</NavLink>
+                <div className="mobile-dropdown-divider" />
+                <NavLink to="/settings" onClick={closeMobileMenu}>{t('nav.settings')}</NavLink>
+                <button onClick={openGuide} className="mobile-dropdown-btn">{t('nav.help')}</button>
+                <button onClick={toggleTheme} className="mobile-dropdown-btn">
+                  {isDark ? '☀ Light Mode' : '☾ Dark Mode'}
+                </button>
+                <div className="mobile-dropdown-divider" />
+                <button onClick={handleLogout} className="mobile-dropdown-btn logout-btn">
+                  {t('nav.logout')}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         <Link to="/" className="navbar-brand">
-          Scorle
+          Scordle
         </Link>
+
         <div className="navbar-links">
           {isAuthenticated ? (
             <>
@@ -115,6 +160,37 @@ function Navbar() {
             </>
           )}
         </div>
+
+        {/* Mobile profile button - visible on mobile when authenticated */}
+        {isAuthenticated && (
+          <div className="mobile-profile-container" ref={menuRef}>
+            <button
+              className="mobile-profile-btn"
+              onClick={() => setShowUserMenu(!showUserMenu)}
+            >
+              <span className="user-streak">{user?.globalDayStreak || 0}</span>
+            </button>
+
+            {showUserMenu && (
+              <div className="user-dropdown mobile-user-dropdown">
+                <Link
+                  to={`/profile/${user?.username}`}
+                  className="user-dropdown-item"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  {t('nav.profile')}
+                </Link>
+                <Link
+                  to="/settings"
+                  className="user-dropdown-item"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  {t('nav.settings')}
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </nav>
   )

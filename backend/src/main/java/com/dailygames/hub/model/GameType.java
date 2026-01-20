@@ -7,8 +7,7 @@ public enum GameType {
     SEMANTLE("Semantle", "https://semantle.com/", "Guess the word using word2vec similarity"),
     HORSE("Horse", "https://enclose.horse/", "Claim the maximum territory with the number of walls given"),
     TRAVLE("Travle", "https://travle.earth/", "Find the path between two countries"),
-    WORLDLE("Worldle", "https://worldle.teuteuf.fr/", "Guess the country from its shape"),
-    MINUTE_CRYPTIC("Minute Cryptic", "https://www.minutecryptic.com/", "Solve a cryptic crossword clue in under a minute"),
+    MINUTE_CRYPTIC("Minute Cryptic", "https://www.minutecryptic.com/", "Solve a cryptic crossword clue"),
     COUNTRYLE("Countryle", "https://countryle.com/", "Guess the country from clues"),
     SPOTLE("Spotle", "https://spotle.io/", "Guess the artist from their top Spotify songs"),
     BANDLE("Bandle", "https://bandle.app/", "Guess the song from increasing audio clips");

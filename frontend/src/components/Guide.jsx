@@ -8,8 +8,8 @@ function Guide() {
   if (!showGuide) return null
 
   const games = [
-    'Connections', 'Spotle', 'Bandle', 'Travle', 'Countryle',
-    'Worldle', 'Minute Cryptic', 'Contexto', 'Semantle', 'Horse'
+    'Wordle', 'Connections', 'Spotle', 'Bandle', 'Travle', 'Countryle',
+    'Minute Cryptic', 'Contexto', 'Semantle', 'Horse'
   ]
 
   return (

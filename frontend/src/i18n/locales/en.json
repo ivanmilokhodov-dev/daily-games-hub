@@ -40,7 +40,7 @@
     "groups": "Groups"
   },
   "home": {
-    "welcome": "Welcome to Scorle",
+    "welcome": "Welcome to Scordle",
     "subtitle": "Track your daily puzzle game scores, compete with friends, and maintain your streaks!",
     "getStarted": "Get Started",
     "signIn": "Sign In",
@@ -150,19 +150,19 @@
     "attempts": "attempts"
   },
   "games": {
+    "WORDLE": "Wordle",
     "CONNECTIONS": "Connections",
     "SPOTLE": "Spotle",
     "BANDLE": "Bandle",
     "TRAVLE": "Travle",
     "COUNTRYLE": "Countryle",
-    "WORLDLE": "Worldle",
     "MINUTE_CRYPTIC": "Minute Cryptic",
     "CONTEXTO": "Contexto",
     "SEMANTLE": "Semantle",
     "HORSE": "Horse"
   },
   "guide": {
-    "title": "Welcome to Scorle!",
+    "title": "Welcome to Scordle!",
     "step1Title": "Play Your Favorite Games",
     "step1Desc": "We support a variety of daily puzzle games. Play them on their original websites.",
     "step2Title": "Submit Your Results",
@@ -245,7 +245,7 @@
   },
   "settings": {
     "title": "Settings",
-    "subtitle": "Customize your Scorle experience.",
+    "subtitle": "Customize your Scordle experience.",
     "appearance": "Appearance",
     "selectTheme": "Select Theme",
     "account": "Account",

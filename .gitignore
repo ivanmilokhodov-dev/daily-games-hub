@@ -2,9 +2,6 @@
 backend/target/
 backend/*.jar
 backend/data/
-backend/.mvn/
-backend/mvnw
-backend/mvnw.cmd
 
 # Frontend
 frontend/node_modules/

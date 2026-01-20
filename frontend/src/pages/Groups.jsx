@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
@@ -13,6 +13,8 @@ function Groups() {
   const [showJoinModal, setShowJoinModal] = useState(false)
   const [showRenameModal, setShowRenameModal] = useState(false)
   const [showManageModal, setShowManageModal] = useState(false)
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [showScoreModal, setShowScoreModal] = useState(false)
   const [selectedGroup, setSelectedGroup] = useState(null)
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [groupScores, setGroupScores] = useState([])
@@ -20,7 +22,42 @@ function Groups() {
   const [newGroupName, setNewGroupName] = useState('')
   const [renameValue, setRenameValue] = useState('')
   const [inviteCode, setInviteCode] = useState('')
+  const [currentInviteCode, setCurrentInviteCode] = useState('')
+  const [selectedScore, setSelectedScore] = useState(null)
+  const [showMembers, setShowMembers] = useState(false)
+  const [copySuccess, setCopySuccess] = useState(false)
   const [error, setError] = useState('')
+
+  const fetchGroups = useCallback(async (silent = false) => {
+    try {
+      if (!silent) setLoading(true)
+      const response = await api.get('/api/groups')
+      setGroups(response.data || [])
+      // Update selected group if it exists
+      if (selectedGroup) {
+        const updated = response.data?.find(g => g.id === selectedGroup.id)
+        if (updated) setSelectedGroup(updated)
+      }
+    } catch (error) {
+      console.error('Failed to fetch groups:', error)
+      if (!silent) setGroups([])
+    } finally {
+      if (!silent) setLoading(false)
+    }
+  }, [selectedGroup])
+
+  const fetchGroupScores = useCallback(async (groupId, date, silent = false) => {
+    try {
+      if (!silent) setScoresLoading(true)
+      const response = await api.get(`/api/scores/group/${groupId}?date=${date}`)
+      setGroupScores(response.data || [])
+    } catch (error) {
+      console.error('Failed to fetch group scores:', error)
+      if (!silent) setGroupScores([])
+    } finally {
+      if (!silent) setScoresLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     fetchGroups()
@@ -32,43 +69,37 @@ function Groups() {
     }
   }, [selectedGroup, selectedDate])
 
-  const fetchGroups = async () => {
-    try {
-      setLoading(true)
-      const response = await api.get('/api/groups')
-      setGroups(response.data || [])
-    } catch (error) {
-      console.error('Failed to fetch groups:', error)
-      setGroups([])
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Polling - update every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchGroups(true)
+      if (selectedGroup) {
+        fetchGroupScores(selectedGroup.id, selectedDate, true)
+      }
+    }, 5000)
 
-  const fetchGroupScores = async (groupId, date) => {
-    try {
-      setScoresLoading(true)
-      const response = await api.get(`/api/scores/group/${groupId}?date=${date}`)
-      setGroupScores(response.data || [])
-    } catch (error) {
-      console.error('Failed to fetch group scores:', error)
-      setGroupScores([])
-    } finally {
-      setScoresLoading(false)
-    }
-  }
+    return () => clearInterval(interval)
+  }, [fetchGroups, fetchGroupScores, selectedGroup, selectedDate])
 
   const getBestScoresPerGame = () => {
     const gameScores = {}
     groupScores.forEach(score => {
       const gameType = score.gameType
       if (!gameScores[gameType]) {
-        gameScores[gameType] = { gameName: score.gameDisplayName, scores: [] }
+        gameScores[gameType] = { gameName: score.gameDisplayName, scores: [], gameType }
       }
       gameScores[gameType].scores.push(score)
     })
     Object.values(gameScores).forEach(game => {
       game.scores.sort((a, b) => {
+        // Special sorting for Horse game - sort by score (higher is better)
+        if (game.gameType === 'HORSE') {
+          if (a.score !== null && b.score !== null) return b.score - a.score
+          if (a.score !== null) return -1
+          if (b.score !== null) return 1
+          return 0
+        }
+        // For other games
         if (a.solved !== b.solved) return a.solved ? -1 : 1
         if (a.attempts && b.attempts) return a.attempts - b.attempts
         if (a.score && b.score) return b.score - a.score
@@ -168,8 +199,26 @@ function Groups() {
     }
   }
 
-  const copyInviteCode = (code) => {
-    navigator.clipboard.writeText(code)
+  const openInviteModal = (code, e) => {
+    if (e) e.stopPropagation()
+    setCurrentInviteCode(code)
+    setCopySuccess(false)
+    setShowInviteModal(true)
+  }
+
+  const copyInviteCode = async () => {
+    try {
+      await navigator.clipboard.writeText(currentInviteCode)
+      setCopySuccess(true)
+      setTimeout(() => setCopySuccess(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
+
+  const openScoreModal = (score) => {
+    setSelectedScore(score)
+    setShowScoreModal(true)
   }
 
   const isOwner = selectedGroup?.ownerUsername === user?.username
@@ -179,6 +228,53 @@ function Groups() {
   }
 
   const bestScores = selectedGroup ? getBestScoresPerGame() : {}
+
+  const renderScoreDisplay = (score, game, index) => {
+    const isHorse = game.gameType === 'HORSE'
+
+    return (
+      <div
+        key={score.id}
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '0.5rem 0',
+          borderTop: index > 0 ? '1px solid var(--border-color)' : undefined,
+          cursor: 'pointer'
+        }}
+        onClick={() => openScoreModal(score)}
+        title="Click to view submitted score"
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontWeight: index === 0 ? '700' : '400', color: index === 0 ? 'var(--primary-color)' : 'inherit' }}>
+            #{index + 1}
+          </span>
+          <span>{score.displayName}</span>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          {isHorse ? (
+            <span style={{ color: 'var(--primary-color)', fontWeight: '600' }}>
+              {score.score !== null ? `${score.score}%` : '-'}
+            </span>
+          ) : (
+            <>
+              {score.solved !== null && (
+                <span style={{ color: score.solved ? 'var(--success-color)' : 'var(--danger-color)', fontWeight: '600' }}>
+                  {score.solved ? t('dashboard.solved') : t('dashboard.failed')}
+                </span>
+              )}
+              {score.attempts && (
+                <span style={{ marginLeft: '0.5rem', color: 'var(--text-secondary)' }}>
+                  {score.attempts} tries
+                </span>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -198,7 +294,7 @@ function Groups() {
 
       {error && <div className="error-message">{error}</div>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: selectedGroup ? '1fr 2fr' : '1fr', gap: '1.5rem' }}>
+      <div className="groups-layout" style={{ display: 'grid', gridTemplateColumns: selectedGroup ? '1fr 2fr' : '1fr', gap: '1.5rem' }}>
         <div>
           {groups.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -224,11 +320,10 @@ function Groups() {
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <button
                         className="btn btn-small btn-outline"
-                        onClick={(e) => { e.stopPropagation(); copyInviteCode(group.inviteCode) }}
+                        onClick={(e) => openInviteModal(group.inviteCode, e)}
                         disabled={actionLoading}
-                        title={group.inviteCode}
                       >
-                        {t('groups.code')}
+                        Invite
                       </button>
                       {group.ownerUsername === user?.username ? (
                         <button
@@ -261,7 +356,7 @@ function Groups() {
         </div>
 
         {selectedGroup && (
-          <div className="card">
+          <div className="card group-details-panel">
             <div className="card-header">
               <div>
                 <h2 className="card-title">{selectedGroup.name}</h2>
@@ -271,7 +366,7 @@ function Groups() {
                   </p>
                 )}
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 {isOwner && (
                   <>
                     <button
@@ -340,16 +435,27 @@ function Groups() {
               </div>
             )}
 
+            {/* Members Section - Hidden by default */}
             <div style={{ marginBottom: '1rem' }}>
-              <strong>{t('groups.members')}:</strong>{' '}
-              {selectedGroup.members?.map((m, i) => (
-                <span key={m.id}>
-                  {m.displayName || m.username}
-                  {m.username === selectedGroup.ownerUsername && ` (${t('groups.owner')})`}
-                  {m.globalDayStreak > 0 && ` [${m.globalDayStreak}d]`}
-                  {i < selectedGroup.members.length - 1 && ', '}
-                </span>
-              ))}
+              <button
+                className="btn btn-small btn-outline"
+                onClick={() => setShowMembers(!showMembers)}
+                style={{ marginBottom: showMembers ? '0.5rem' : 0 }}
+              >
+                {showMembers ? 'Hide Members' : `Show Members (${selectedGroup.members?.length || 0})`}
+              </button>
+              {showMembers && (
+                <div style={{ padding: '0.75rem', background: 'var(--hover-background)', borderRadius: '0.5rem', marginTop: '0.5rem' }}>
+                  {selectedGroup.members?.map((m, i) => (
+                    <span key={m.id}>
+                      {m.displayName || m.username}
+                      {m.username === selectedGroup.ownerUsername && ` (${t('groups.owner')})`}
+                      {m.globalDayStreak > 0 && ` [${m.globalDayStreak}d]`}
+                      {i < selectedGroup.members.length - 1 && ', '}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <h3 style={{ marginBottom: '1rem' }}>{t('groups.todaysScores')}</h3>
@@ -361,37 +467,7 @@ function Groups() {
                 {Object.entries(bestScores).map(([gameType, game]) => (
                   <div key={gameType} style={{ padding: '1rem', background: 'var(--hover-background)', borderRadius: '0.5rem' }}>
                     <h4 style={{ margin: '0 0 0.75rem', color: 'var(--primary-color)' }}>{game.gameName}</h4>
-                    {game.scores.map((score, index) => (
-                      <div
-                        key={score.id}
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          padding: '0.5rem 0',
-                          borderTop: index > 0 ? '1px solid var(--border-color)' : undefined
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{ fontWeight: index === 0 ? '700' : '400', color: index === 0 ? 'var(--primary-color)' : 'inherit' }}>
-                            #{index + 1}
-                          </span>
-                          <span>{score.displayName}</span>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          {score.solved !== null && (
-                            <span style={{ color: score.solved ? 'var(--success-color)' : 'var(--danger-color)', fontWeight: '600' }}>
-                              {score.solved ? t('dashboard.solved') : t('dashboard.failed')}
-                            </span>
-                          )}
-                          {score.attempts && (
-                            <span style={{ marginLeft: '0.5rem', color: 'var(--text-secondary)' }}>
-                              {score.attempts} tries
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                    {game.scores.map((score, index) => renderScoreDisplay(score, game, index))}
                   </div>
                 ))}
               </div>
@@ -503,6 +579,75 @@ function Groups() {
                     )}
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invite Modal */}
+      {showInviteModal && (
+        <div className="modal-overlay" onClick={() => setShowInviteModal(false)}>
+          <div className="modal" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Invite Code</h2>
+              <button className="modal-close" onClick={() => setShowInviteModal(false)}>&times;</button>
+            </div>
+            <div className="modal-body" style={{ textAlign: 'center' }}>
+              <p style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>
+                Share this code with friends to invite them to the group:
+              </p>
+              <div style={{
+                fontSize: '2rem',
+                fontWeight: '700',
+                fontFamily: 'monospace',
+                padding: '1rem',
+                background: 'var(--hover-background)',
+                borderRadius: '0.5rem',
+                letterSpacing: '0.25rem',
+                marginBottom: '1.5rem'
+              }}>
+                {currentInviteCode}
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                <button
+                  className="btn btn-primary"
+                  onClick={copyInviteCode}
+                >
+                  {copySuccess ? 'Copied!' : 'Copy Code'}
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowInviteModal(false)}
+                >
+                  {t('common.cancel')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Score Details Modal */}
+      {showScoreModal && selectedScore && (
+        <div className="modal-overlay" onClick={() => setShowScoreModal(false)}>
+          <div className="modal" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{selectedScore.displayName}'s Score</h2>
+              <button className="modal-close" onClick={() => setShowScoreModal(false)}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <h4 style={{ marginBottom: '0.5rem', color: 'var(--primary-color)' }}>{selectedScore.gameDisplayName}</h4>
+              <div className="score-raw-display">
+                {selectedScore.rawResult || 'No raw result available'}
+              </div>
+              <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowScoreModal(false)}
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>

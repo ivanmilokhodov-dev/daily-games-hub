@@ -1744,3 +1744,200 @@ button.user-badge {
   color: var(--text-primary);
   min-width: 40px;
 }
+
+/* Mobile Navigation */
+.mobile-menu-container,
+.mobile-profile-container {
+  display: none;
+}
+
+.hamburger-btn {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 24px;
+  height: 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 10;
+}
+
+.hamburger-line {
+  width: 100%;
+  height: 2px;
+  background-color: var(--text-primary);
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+.mobile-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  min-width: 200px;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.mobile-dropdown a,
+.mobile-dropdown-btn {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+
+.mobile-dropdown a:hover,
+.mobile-dropdown-btn:hover {
+  background: var(--hover-background);
+}
+
+.mobile-dropdown a.active {
+  color: var(--primary-color);
+  background: var(--hover-background);
+}
+
+.mobile-dropdown-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 0.25rem 0;
+}
+
+.mobile-dropdown-btn.logout-btn:hover {
+  background: #fef2f2;
+  color: var(--danger-color);
+}
+
+[data-theme="dark"] .mobile-dropdown-btn.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.mobile-profile-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--hover-background);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.mobile-profile-btn .user-streak {
+  font-size: 0.875rem;
+}
+
+.mobile-user-dropdown {
+  right: 0;
+  left: auto;
+}
+
+/* Center games grid on last row */
+.games-grid-centered {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.games-grid-centered > * {
+  flex: 0 1 calc(25% - 0.75rem);
+  min-width: 200px;
+}
+
+/* Score raw result display */
+.score-raw-display {
+  background: var(--hover-background);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+/* Version info */
+.version-info {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: var(--hover-background);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.version-info h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.commit-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.commit-list li {
+  padding: 0.25rem 0;
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .navbar .container {
+    justify-content: space-between;
+  }
+
+  .mobile-menu-container,
+  .mobile-profile-container {
+    display: block;
+    position: relative;
+  }
+
+  .navbar-links {
+    display: none !important;
+  }
+
+  .navbar-brand {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .games-grid-centered > * {
+    flex: 0 1 calc(50% - 0.5rem);
+  }
+
+  /* Groups page mobile layout */
+  .groups-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .group-details-panel {
+    order: -1;
+  }
+}
+
+@media (max-width: 480px) {
+  .games-grid-centered > * {
+    flex: 0 1 100%;
+  }
+}

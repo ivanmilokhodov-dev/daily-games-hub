@@ -40,7 +40,7 @@
     "groups": "Групи"
   },
   "home": {
-    "welcome": "Ласкаво просимо до Scorle",
+    "welcome": "Ласкаво просимо до Scordle",
     "subtitle": "Відстежуйте свої результати в щоденних головоломках, змагайтесь з друзями та підтримуйте свої серії!",
     "getStarted": "Почати",
     "signIn": "Увійти",
@@ -150,19 +150,19 @@
     "attempts": "спроб"
   },
   "games": {
+    "WORDLE": "Wordle",
     "CONNECTIONS": "Connections",
     "SPOTLE": "Spotle",
     "BANDLE": "Bandle",
     "TRAVLE": "Travle",
     "COUNTRYLE": "Countryle",
-    "WORLDLE": "Worldle",
     "MINUTE_CRYPTIC": "Minute Cryptic",
     "CONTEXTO": "Contexto",
     "SEMANTLE": "Semantle",
     "HORSE": "Horse"
   },
   "guide": {
-    "title": "Ласкаво просимо до Scorle!",
+    "title": "Ласкаво просимо до Scordle!",
     "step1Title": "Грайте у свої улюблені ігри",
     "step1Desc": "Ми підтримуємо різноманітні щоденні головоломки. Грайте в них на їхніх оригінальних сайтах.",
     "step2Title": "Надсилайте свої результати",
@@ -245,7 +245,7 @@
   },
   "settings": {
     "title": "Налаштування",
-    "subtitle": "Налаштуйте Scorle під себе.",
+    "subtitle": "Налаштуйте Scordle під себе.",
     "appearance": "Зовнішній вигляд",
     "selectTheme": "Оберіть тему",
     "account": "Акаунт",

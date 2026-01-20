@@ -55,7 +55,8 @@ public class ScoreService {
         // Update rating
         ratingService.updateRating(user, request.getGameType(),
             Boolean.TRUE.equals(request.getSolved()),
-            request.getAttempts() != null ? request.getAttempts() : 1);
+            request.getAttempts() != null ? request.getAttempts() : 1,
+            request.getScore());
 
         // Update group streaks for all groups the user is in
         updateGroupStreaks(user, gameDate);

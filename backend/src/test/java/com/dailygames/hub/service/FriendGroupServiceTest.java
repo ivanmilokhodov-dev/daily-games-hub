@@ -108,14 +108,14 @@ class FriendGroupServiceTest {
 
         assertThatThrownBy(() -> friendGroupService.joinGroup(owner, "ABC12345"))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("Already a member of this group");
+            .hasMessage("You are already a member of this group");
     }
 
     @Test
     @DisplayName("Should leave group successfully")
     void leaveGroup_Success() {
         group.getMembers().add(member);
-        when(friendGroupRepository.findById(1L)).thenReturn(Optional.of(group));
+        when(friendGroupRepository.findByIdWithMembers(1L)).thenReturn(Optional.of(group));
         when(friendGroupRepository.save(any(FriendGroup.class))).thenReturn(group);
 
         friendGroupService.leaveGroup(member, 1L);
@@ -127,17 +127,17 @@ class FriendGroupServiceTest {
     @Test
     @DisplayName("Should throw exception when owner tries to leave")
     void leaveGroup_OwnerCannotLeave() {
-        when(friendGroupRepository.findById(1L)).thenReturn(Optional.of(group));
+        when(friendGroupRepository.findByIdWithMembers(1L)).thenReturn(Optional.of(group));
 
         assertThatThrownBy(() -> friendGroupService.leaveGroup(owner, 1L))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("Owner cannot leave the group");
+            .hasMessage("Owner cannot leave the group. Delete the group instead.");
     }
 
     @Test
     @DisplayName("Should delete group successfully")
     void deleteGroup_Success() {
-        when(friendGroupRepository.findById(1L)).thenReturn(Optional.of(group));
+        when(friendGroupRepository.findByIdWithMembers(1L)).thenReturn(Optional.of(group));
 
         friendGroupService.deleteGroup(owner, 1L);
 
@@ -147,17 +147,17 @@ class FriendGroupServiceTest {
     @Test
     @DisplayName("Should throw exception when non-owner tries to delete")
     void deleteGroup_NotOwner() {
-        when(friendGroupRepository.findById(1L)).thenReturn(Optional.of(group));
+        when(friendGroupRepository.findByIdWithMembers(1L)).thenReturn(Optional.of(group));
 
         assertThatThrownBy(() -> friendGroupService.deleteGroup(member, 1L))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("Only the owner can delete the group");
+            .hasMessage("Only the owner can delete this group");
     }
 
     @Test
     @DisplayName("Should rename group successfully")
     void renameGroup_Success() {
-        when(friendGroupRepository.findById(1L)).thenReturn(Optional.of(group));
+        when(friendGroupRepository.findByIdWithMembers(1L)).thenReturn(Optional.of(group));
         when(friendGroupRepository.save(any(FriendGroup.class))).thenReturn(group);
 
         FriendGroupResponse result = friendGroupService.renameGroup(owner, 1L, "New Name");
