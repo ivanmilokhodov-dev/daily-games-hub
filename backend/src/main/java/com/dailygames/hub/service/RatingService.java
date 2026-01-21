@@ -50,11 +50,11 @@ public class RatingService {
             ratingChange = (int) (K_FACTOR * performance);
         } else if (gameType == GameType.CONNECTIONS) {
             // Connections: attempts = number of mistakes (0-4), 4 mistakes = fail
-            // 0 mistakes = perfect (+K_FACTOR), 3 mistakes = worst solved (small gain), 4 = fail
+            // 0 mistakes = +32, 1 = +24, 2 = +16, 3 = +8, 4 = -32
             if (solved) {
                 rating.setGamesWon(rating.getGamesWon() + 1);
-                // mistakes 0-3: performance 1.0 to 0.0
-                double performance = 1.0 - ((double) attempts / 3.0);
+                // Each mistake costs 8 points: (4 - mistakes) / 4 gives 1.0, 0.75, 0.5, 0.25
+                double performance = (4.0 - attempts) / 4.0;
                 ratingChange = (int) (K_FACTOR * performance);
             } else {
                 ratingChange = -K_FACTOR;
