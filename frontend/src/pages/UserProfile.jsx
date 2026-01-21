@@ -112,6 +112,57 @@ function UserProfile() {
               <div className="stat-label">{t('profile.avgRating')}</div>
             </div>
           </div>
+          {/* Rating History Graph */}
+          {profile.ratingHistory && profile.ratingHistory.length >= 1 && (
+            <div className="rating-graph" style={{ marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Rating History</div>
+              <svg viewBox="0 0 400 80" className="rating-chart" style={{ height: '80px' }}>
+                {(() => {
+                  const data = profile.ratingHistory
+                  if (data.length === 0) return null
+
+                  const maxRating = Math.max(...data.map(d => d.rating))
+                  const minRating = Math.min(...data.map(d => d.rating))
+                  const range = maxRating - minRating || 100
+                  const padding = range * 0.15
+
+                  if (data.length === 1) {
+                    return (
+                      <>
+                        <line x1="25" y1="40" x2="395" y2="40" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4" />
+                        <circle cx="210" cy="40" r="5" fill="var(--primary-color)">
+                          <title>{data[0].date}: {data[0].rating}</title>
+                        </circle>
+                      </>
+                    )
+                  }
+
+                  const points = data.map((d, i) => {
+                    const x = (i / (data.length - 1)) * 370 + 25
+                    const y = 65 - ((d.rating - minRating + padding) / (range + padding * 2)) * 50
+                    return `${x},${y}`
+                  }).join(' ')
+
+                  return (
+                    <>
+                      <line x1="25" y1="15" x2="395" y2="15" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4" />
+                      <line x1="25" y1="65" x2="395" y2="65" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4" />
+                      <polyline points={points} fill="none" stroke="var(--primary-color)" strokeWidth="2" />
+                      {data.map((d, i) => {
+                        const x = (i / (data.length - 1)) * 370 + 25
+                        const y = 65 - ((d.rating - minRating + padding) / (range + padding * 2)) * 50
+                        return (
+                          <circle key={i} cx={x} cy={y} r="3" fill="var(--primary-color)">
+                            <title>{d.date}: {d.rating}</title>
+                          </circle>
+                        )
+                      })}
+                    </>
+                  )
+                })()}
+              </svg>
+            </div>
+          )}
         </div>
 
         <div className="card">
@@ -139,85 +190,6 @@ function UserProfile() {
           )}
         </div>
       </div>
-
-      {/* Rating History Graph */}
-      {profile.ratingHistory && profile.ratingHistory.length >= 1 && (
-        <div className="card">
-          <div className="card-header">
-            <h2 className="card-title">Average Rating History</h2>
-          </div>
-          <div className="rating-graph">
-            <svg viewBox="0 0 400 120" className="rating-chart">
-              {(() => {
-                const data = profile.ratingHistory
-                if (data.length === 0) return null
-
-                const maxRating = Math.max(...data.map(d => d.rating))
-                const minRating = Math.min(...data.map(d => d.rating))
-                const range = maxRating - minRating || 100
-                const padding = range * 0.15
-
-                // Single data point - show centered
-                if (data.length === 1) {
-                  return (
-                    <>
-                      <line x1="25" y1="60" x2="395" y2="60" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4" />
-                      <text x="5" y="64" fontSize="9" fill="var(--text-secondary)">{data[0].rating}</text>
-                      <circle cx="210" cy="60" r="6" fill="var(--primary-color)">
-                        <title>{data[0].date}: {data[0].rating}</title>
-                      </circle>
-                    </>
-                  )
-                }
-
-                const points = data.map((d, i) => {
-                  const x = (i / (data.length - 1)) * 370 + 25
-                  const y = 100 - ((d.rating - minRating + padding) / (range + padding * 2)) * 80
-                  return `${x},${y}`
-                }).join(' ')
-
-                return (
-                  <>
-                    {/* Grid lines */}
-                    <line x1="25" y1="20" x2="395" y2="20" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4" />
-                    <line x1="25" y1="60" x2="395" y2="60" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4" />
-                    <line x1="25" y1="100" x2="395" y2="100" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4" />
-                    {/* Rating labels */}
-                    <text x="5" y="24" fontSize="9" fill="var(--text-secondary)">{maxRating}</text>
-                    <text x="5" y="104" fontSize="9" fill="var(--text-secondary)">{minRating}</text>
-                    {/* Line chart */}
-                    <polyline
-                      points={points}
-                      fill="none"
-                      stroke="var(--primary-color)"
-                      strokeWidth="2.5"
-                    />
-                    {data.map((d, i) => {
-                      const x = (i / (data.length - 1)) * 370 + 25
-                      const y = 100 - ((d.rating - minRating + padding) / (range + padding * 2)) * 80
-                      return (
-                        <circle
-                          key={i}
-                          cx={x}
-                          cy={y}
-                          r="4"
-                          fill="var(--primary-color)"
-                        >
-                          <title>{d.date}: {d.rating}</title>
-                        </circle>
-                      )
-                    })}
-                  </>
-                )
-              })()}
-            </svg>
-            <div className="rating-graph-labels">
-              <span>{profile.ratingHistory[0]?.date ? new Date(profile.ratingHistory[0].date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''}</span>
-              <span>Current: {profile.averageRating}</span>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="card">
         <div className="card-header">
