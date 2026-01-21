@@ -311,11 +311,6 @@ function Groups() {
                       <h3 style={{ margin: 0 }}>{group.name}</h3>
                       <p style={{ margin: '0.25rem 0 0', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
                         {group.memberCount || group.members?.length || 0} {t('groups.members').toLowerCase()}
-                        {group.groupStreak > 0 && (
-                          <span style={{ marginLeft: '0.75rem', color: 'var(--primary-color)' }}>
-                            {group.groupStreak} day streak
-                          </span>
-                        )}
                       </p>
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
