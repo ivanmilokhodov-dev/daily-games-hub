@@ -116,7 +116,7 @@ function UserProfile() {
           {profile.ratingHistory && profile.ratingHistory.length >= 1 && (
             <div className="rating-graph" style={{ marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Rating History</div>
-              <svg viewBox="0 0 400 100" className="rating-chart" style={{ height: '100px' }}>
+              <svg viewBox="0 0 400 95" className="rating-chart" style={{ height: '95px' }}>
                 {(() => {
                   const data = profile.ratingHistory
                   if (data.length === 0) return null
@@ -125,22 +125,33 @@ function UserProfile() {
                   const minRating = Math.min(...data.map(d => d.rating))
                   const range = maxRating - minRating || 100
                   const padding = range * 0.1
-                  const chartTop = 10
-                  const chartBottom = 70
-                  const chartLeft = 40
-                  const chartRight = 395
+                  const chartTop = 12
+                  const chartBottom = 68
+                  const chartLeft = 35
+                  const chartRight = 390
+                  const gridRows = 4
+                  const gridCols = 6
+
+                  const formatDate = (dateStr) => new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
                   if (data.length === 1) {
                     const rating = data[0].rating
-                    const dateStr = new Date(data[0].date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                    const dateStr = formatDate(data[0].date)
                     return (
                       <>
-                        <line x1={chartLeft} y1="40" x2={chartRight} y2="40" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4" />
-                        <text x="5" y="44" fontSize="9" fill="var(--text-secondary)">{rating}</text>
-                        <circle cx="217" cy="40" r="5" fill="var(--primary-color)">
+                        {/* Background grid */}
+                        <rect x={chartLeft} y={chartTop} width={chartRight - chartLeft} height={chartBottom - chartTop} fill="var(--hover-background)" rx="4" />
+                        {[...Array(gridRows + 1)].map((_, i) => (
+                          <line key={`h${i}`} x1={chartLeft} y1={chartTop + (i * (chartBottom - chartTop) / gridRows)} x2={chartRight} y2={chartTop + (i * (chartBottom - chartTop) / gridRows)} stroke="var(--border-color)" strokeWidth="0.5" />
+                        ))}
+                        {[...Array(gridCols + 1)].map((_, i) => (
+                          <line key={`v${i}`} x1={chartLeft + (i * (chartRight - chartLeft) / gridCols)} y1={chartTop} x2={chartLeft + (i * (chartRight - chartLeft) / gridCols)} y2={chartBottom} stroke="var(--border-color)" strokeWidth="0.5" />
+                        ))}
+                        <text x="5" y={(chartTop + chartBottom) / 2 + 3} fontSize="9" fill="var(--text-secondary)">{rating}</text>
+                        <circle cx={(chartLeft + chartRight) / 2} cy={(chartTop + chartBottom) / 2} r="5" fill="var(--primary-color)">
                           <title>{data[0].date}: {rating}</title>
                         </circle>
-                        <text x="217" y="90" fontSize="9" fill="var(--text-secondary)" textAnchor="middle">{dateStr}</text>
+                        <text x={(chartLeft + chartRight) / 2} y="88" fontSize="9" fill="var(--text-secondary)" textAnchor="middle">{dateStr}</text>
                       </>
                     )
                   }
@@ -151,26 +162,31 @@ function UserProfile() {
                     return `${x},${y}`
                   }).join(' ')
 
-                  // Get dates for x-axis (first, middle, last)
-                  const formatDate = (dateStr) => new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
                   const firstDate = formatDate(data[0].date)
                   const lastDate = formatDate(data[data.length - 1].date)
+                  const displayMax = Math.round(maxRating + padding)
+                  const displayMin = Math.round(minRating - padding)
 
                   return (
                     <>
-                      {/* Grid lines */}
-                      <line x1={chartLeft} y1={chartTop} x2={chartRight} y2={chartTop} stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4" />
-                      <line x1={chartLeft} y1={(chartTop + chartBottom) / 2} x2={chartRight} y2={(chartTop + chartBottom) / 2} stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4" />
-                      <line x1={chartLeft} y1={chartBottom} x2={chartRight} y2={chartBottom} stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4" />
+                      {/* Background with grid */}
+                      <rect x={chartLeft} y={chartTop} width={chartRight - chartLeft} height={chartBottom - chartTop} fill="var(--hover-background)" rx="4" />
+                      {/* Horizontal grid lines */}
+                      {[...Array(gridRows + 1)].map((_, i) => (
+                        <line key={`h${i}`} x1={chartLeft} y1={chartTop + (i * (chartBottom - chartTop) / gridRows)} x2={chartRight} y2={chartTop + (i * (chartBottom - chartTop) / gridRows)} stroke="var(--border-color)" strokeWidth="0.5" />
+                      ))}
+                      {/* Vertical grid lines */}
+                      {[...Array(gridCols + 1)].map((_, i) => (
+                        <line key={`v${i}`} x1={chartLeft + (i * (chartRight - chartLeft) / gridCols)} y1={chartTop} x2={chartLeft + (i * (chartRight - chartLeft) / gridCols)} y2={chartBottom} stroke="var(--border-color)" strokeWidth="0.5" />
+                      ))}
                       {/* Y-axis labels */}
-                      <text x="5" y={chartTop + 4} fontSize="9" fill="var(--text-secondary)">{Math.round(maxRating + padding)}</text>
-                      <text x="5" y={(chartTop + chartBottom) / 2 + 3} fontSize="9" fill="var(--text-secondary)">{Math.round((maxRating + minRating) / 2)}</text>
-                      <text x="5" y={chartBottom + 4} fontSize="9" fill="var(--text-secondary)">{Math.round(minRating - padding)}</text>
+                      <text x="5" y={chartTop + 4} fontSize="9" fill="var(--text-secondary)">{displayMax}</text>
+                      <text x="5" y={chartBottom + 3} fontSize="9" fill="var(--text-secondary)">{displayMin}</text>
                       {/* X-axis labels */}
-                      <text x={chartLeft} y="90" fontSize="9" fill="var(--text-secondary)" textAnchor="start">{firstDate}</text>
-                      <text x={chartRight} y="90" fontSize="9" fill="var(--text-secondary)" textAnchor="end">{lastDate}</text>
+                      <text x={chartLeft} y="88" fontSize="9" fill="var(--text-secondary)" textAnchor="start">{firstDate}</text>
+                      <text x={chartRight} y="88" fontSize="9" fill="var(--text-secondary)" textAnchor="end">{lastDate}</text>
                       {/* Line chart */}
-                      <polyline points={points} fill="none" stroke="var(--primary-color)" strokeWidth="2" />
+                      <polyline points={points} fill="none" stroke="var(--primary-color)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
                       {data.map((d, i) => {
                         const x = (i / (data.length - 1)) * (chartRight - chartLeft) + chartLeft
                         const y = chartBottom - ((d.rating - minRating + padding) / (range + padding * 2)) * (chartBottom - chartTop)
