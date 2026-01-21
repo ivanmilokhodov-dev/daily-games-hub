@@ -48,6 +48,17 @@ public class RatingService {
             // Score is 0-100, convert to performance (-1 to +1 range, where 100 = +1, 0 = -1)
             double performance = (score - 50.0) / 50.0;
             ratingChange = (int) (K_FACTOR * performance);
+        } else if (gameType == GameType.CONNECTIONS) {
+            // Connections: attempts = number of mistakes (0-4), 4 mistakes = fail
+            // 0 mistakes = perfect (+K_FACTOR), 3 mistakes = worst solved (small gain), 4 = fail
+            if (solved) {
+                rating.setGamesWon(rating.getGamesWon() + 1);
+                // mistakes 0-3: performance 1.0 to 0.0
+                double performance = 1.0 - ((double) attempts / 3.0);
+                ratingChange = (int) (K_FACTOR * performance);
+            } else {
+                ratingChange = -K_FACTOR;
+            }
         } else if (solved) {
             rating.setGamesWon(rating.getGamesWon() + 1);
             // Symmetric: perfect (1 attempt) = +K_FACTOR, worst solved (max attempts) = 0

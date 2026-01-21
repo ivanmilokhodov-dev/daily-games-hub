@@ -67,19 +67,24 @@ function SubmitScore() {
       const emojiRows = rawResult.split('\n').filter(line =>
         line.includes('🟨') || line.includes('🟩') || line.includes('🟦') || line.includes('🟪')
       )
-      updates.attempts = String(emojiRows.length)
 
-      // Solved only if there are exactly 4 rows where each row has 4 squares of the SAME color
+      // Count mistakes (rows with mixed colors) and solved categories (rows with same color)
+      let mistakes = 0
       let solvedCategories = 0
       emojiRows.forEach(row => {
-        // Check if all 4 squares in the row are the same color
         const squares = [...row].filter(char =>
           char === '🟨' || char === '🟩' || char === '🟦' || char === '🟪'
         )
         if (squares.length === 4 && squares.every(s => s === squares[0])) {
           solvedCategories++
+        } else if (squares.length === 4) {
+          mistakes++
         }
       })
+
+      // attempts = number of mistakes (0-4), not total guesses
+      updates.attempts = String(mistakes)
+      // Solved if all 4 categories found (less than 4 mistakes)
       updates.solved = String(solvedCategories === 4)
     }
     // Spotle - Spotify artist guessing (10 guesses max)
