@@ -95,9 +95,15 @@ function Navbar() {
                   className="user-badge"
                   onClick={() => setShowUserMenu(!showUserMenu)}
                 >
-                  <span className="user-streak">{user?.globalDayStreak || 0}</span>
+                  <span className="desktop-avatar">
+                    {(user?.displayName || user?.username || 'U').charAt(0).toUpperCase()}
+                  </span>
                   <span className="user-name">{user?.displayName || user?.username}</span>
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" style={{ marginLeft: '4px' }}>
+                  <span className="user-streak-display">
+                    <span className="streak-fire">🔥</span>
+                    <span className="streak-count">{user?.globalDayStreak || 0}</span>
+                  </span>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
                     <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
                   </svg>
                 </button>
