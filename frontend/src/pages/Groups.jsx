@@ -359,13 +359,22 @@ function Groups() {
         {selectedGroup && (
           <div className="card group-details-panel">
             <div className="card-header">
-              <div>
-                <h2 className="card-title">{selectedGroup.name}</h2>
-                {selectedGroup.groupStreak > 0 && (
-                  <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: 'var(--primary-color)' }}>
-                    {selectedGroup.groupStreak} day group streak (best: {selectedGroup.longestGroupStreak})
-                  </p>
-                )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <button
+                  className="btn btn-small btn-outline mobile-only-close"
+                  onClick={() => setSelectedGroup(null)}
+                  style={{ padding: '0.25rem 0.5rem' }}
+                >
+                  ←
+                </button>
+                <div>
+                  <h2 className="card-title" style={{ margin: 0 }}>{selectedGroup.name}</h2>
+                  {selectedGroup.groupStreak > 0 && (
+                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: 'var(--primary-color)' }}>
+                      {selectedGroup.groupStreak} day group streak (best: {selectedGroup.longestGroupStreak})
+                    </p>
+                  )}
+                </div>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 {isOwner && (
