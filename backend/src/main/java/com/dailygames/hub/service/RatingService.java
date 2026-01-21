@@ -49,12 +49,13 @@ public class RatingService {
             double performance = (score - 50.0) / 50.0;
             ratingChange = (int) (K_FACTOR * performance);
         } else if (gameType == GameType.CONNECTIONS) {
-            // Connections: attempts = number of mistakes (0-4), 4 mistakes = fail
-            // 0 mistakes = +32, 1 = +24, 2 = +16, 3 = +8, 4 = -32
+            // Connections: attempts = total guesses (4-8), mistakes = attempts - 4
+            // 0 mistakes (4 guesses) = +32, 1 = +24, 2 = +16, 3 = +8, 4+ = -32
             if (solved) {
                 rating.setGamesWon(rating.getGamesWon() + 1);
+                int mistakes = attempts - 4; // 4 correct guesses needed, rest are mistakes
                 // Each mistake costs 8 points: (4 - mistakes) / 4 gives 1.0, 0.75, 0.5, 0.25
-                double performance = (4.0 - attempts) / 4.0;
+                double performance = (4.0 - mistakes) / 4.0;
                 ratingChange = (int) (K_FACTOR * performance);
             } else {
                 ratingChange = -K_FACTOR;
