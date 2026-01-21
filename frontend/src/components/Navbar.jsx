@@ -15,10 +15,13 @@ function Navbar() {
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const menuRef = useRef(null)
   const mobileMenuRef = useRef(null)
+  const mobileProfileRef = useRef(null)
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      const clickedInsideDesktopMenu = menuRef.current && menuRef.current.contains(event.target)
+      const clickedInsideMobileProfile = mobileProfileRef.current && mobileProfileRef.current.contains(event.target)
+      if (!clickedInsideDesktopMenu && !clickedInsideMobileProfile) {
         setShowUserMenu(false)
       }
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
@@ -63,15 +66,7 @@ function Navbar() {
                 <NavLink to="/groups" onClick={closeMobileMenu}>{t('nav.groups')}</NavLink>
                 <NavLink to="/submit" onClick={closeMobileMenu}>{t('nav.submitScore')}</NavLink>
                 <div className="mobile-dropdown-divider" />
-                <NavLink to="/settings" onClick={closeMobileMenu}>{t('nav.settings')}</NavLink>
-                <button onClick={openGuide} className="mobile-dropdown-btn">{t('nav.help')}</button>
-                <button onClick={toggleTheme} className="mobile-dropdown-btn">
-                  {isDark ? '☀ Light Mode' : '☾ Dark Mode'}
-                </button>
-                <div className="mobile-dropdown-divider" />
-                <button onClick={handleLogout} className="mobile-dropdown-btn logout-btn">
-                  {t('nav.logout')}
-                </button>
+                <button onClick={() => { openGuide(); closeMobileMenu(); }} className="mobile-dropdown-btn">{t('nav.help')}</button>
               </div>
             )}
           </div>
@@ -163,12 +158,13 @@ function Navbar() {
 
         {/* Mobile profile button - visible on mobile when authenticated */}
         {isAuthenticated && (
-          <div className="mobile-profile-container" ref={menuRef}>
+          <div className="mobile-profile-container" ref={mobileProfileRef}>
             <button
-              className="mobile-profile-btn"
+              className="mobile-avatar-btn"
               onClick={() => setShowUserMenu(!showUserMenu)}
+              title={user?.displayName || user?.username}
             >
-              <span className="user-streak">{user?.globalDayStreak || 0}</span>
+              {(user?.displayName || user?.username || 'U').charAt(0).toUpperCase()}
             </button>
 
             {showUserMenu && (
@@ -187,6 +183,13 @@ function Navbar() {
                 >
                   {t('nav.settings')}
                 </Link>
+                <div className="user-dropdown-divider" />
+                <button
+                  className="user-dropdown-item logout-item"
+                  onClick={handleLogout}
+                >
+                  {t('nav.logout')}
+                </button>
               </div>
             )}
           </div>

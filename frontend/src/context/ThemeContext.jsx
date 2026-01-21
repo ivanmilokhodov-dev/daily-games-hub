@@ -3,12 +3,18 @@ import { createContext, useContext, useState, useEffect } from 'react'
 const ThemeContext = createContext(null)
 
 export const themes = [
-  { id: 'light', name: 'Light', isDark: false },
-  { id: 'dark', name: 'Dark', isDark: true },
-  { id: 'sunset', name: 'Sunset', isDark: false },
-  { id: 'ocean', name: 'Ocean', isDark: true },
-  { id: 'forest', name: 'Forest', isDark: false },
-  { id: 'midnight', name: 'Midnight', isDark: true }
+  // Orange accent pair
+  { id: 'light', name: 'Light', isDark: false, accent: 'orange' },
+  { id: 'dark', name: 'Dark', isDark: true, accent: 'orange' },
+  // Blue accent pair
+  { id: 'sky', name: 'Sky', isDark: false, accent: 'blue' },
+  { id: 'ocean', name: 'Ocean', isDark: true, accent: 'blue' },
+  // Green accent pair
+  { id: 'forest', name: 'Forest', isDark: false, accent: 'green' },
+  { id: 'emerald', name: 'Emerald', isDark: true, accent: 'green' },
+  // Purple accent pair
+  { id: 'lavender', name: 'Lavender', isDark: false, accent: 'purple' },
+  { id: 'midnight', name: 'Midnight', isDark: true, accent: 'purple' }
 ]
 
 export function ThemeProvider({ children }) {

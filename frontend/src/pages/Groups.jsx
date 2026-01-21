@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
@@ -303,7 +304,7 @@ function Groups() {
                   key={group.id}
                   className="card"
                   style={{ cursor: 'pointer', border: selectedGroup?.id === group.id ? '2px solid var(--primary-color)' : undefined }}
-                  onClick={() => setSelectedGroup(group)}
+                  onClick={() => setSelectedGroup(selectedGroup?.id === group.id ? null : group)}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                     <div>
@@ -448,7 +449,13 @@ function Groups() {
                 <div style={{ padding: '0.75rem', background: 'var(--hover-background)', borderRadius: '0.5rem', marginTop: '0.5rem' }}>
                   {selectedGroup.members?.map((m, i) => (
                     <span key={m.id}>
-                      {m.displayName || m.username}
+                      <Link
+                        to={`/profile/${m.username}`}
+                        style={{ color: 'var(--primary-color)', textDecoration: 'none' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {m.displayName || m.username}
+                      </Link>
                       {m.username === selectedGroup.ownerUsername && ` (${t('groups.owner')})`}
                       {m.globalDayStreak > 0 && ` [${m.globalDayStreak}d]`}
                       {i < selectedGroup.members.length - 1 && ', '}
@@ -458,7 +465,12 @@ function Groups() {
               )}
             </div>
 
-            <h3 style={{ marginBottom: '1rem' }}>{t('groups.todaysScores')}</h3>
+            <h3 style={{ marginBottom: '1rem' }}>
+              {selectedDate === new Date().toISOString().split('T')[0]
+                ? t('groups.todaysScores')
+                : `Scores for ${new Date(selectedDate + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}`
+              }
+            </h3>
 
             {scoresLoading ? (
               <div className="loading"><div className="spinner"></div></div>

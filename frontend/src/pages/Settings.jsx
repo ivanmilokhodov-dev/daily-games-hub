@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
@@ -11,7 +11,24 @@ const languages = [
 ]
 
 // Version info - updated manually or via build process
-const APP_VERSION = '1.0.0'
+const APP_VERSION = '1.2.0'
+
+// Patch notes for current version
+const PATCH_NOTES = [
+  'Average rating history graph on user profiles',
+  'Rating changes now tracked and displayed for each game',
+  'Recent activity sorted by submission time (newest first)',
+  'New theme pairs: Sky (light blue), Emerald (dark green), Lavender (light purple)',
+  'Themes displayed in light/dark rows for easier selection',
+  'Game history with pagination (10 per page) and clickable rows',
+  'Member names in groups clickable to view profiles',
+  'Clicking expanded group collapses it',
+  'Past dates show "Scores for [date]" instead of "Today\'s Scores"',
+  'Mobile: Profile avatar with dropdown for settings/logout',
+  'Mobile: Fixed groups expanded view UI',
+  'Fixed Spotle score parsing',
+  'Contexto hints count as 5 guesses (same as Semantle)'
+]
 
 function Settings() {
   const { t, i18n } = useTranslation()
@@ -36,38 +53,6 @@ function Settings() {
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' })
   const [adminMessage, setAdminMessage] = useState({ type: '', text: '' })
   const [loading, setLoading] = useState({ profile: false, password: false })
-  const [commits, setCommits] = useState([])
-  const [commitsLoading, setCommitsLoading] = useState(false)
-
-  useEffect(() => {
-    fetchLatestCommits()
-  }, [])
-
-  const fetchLatestCommits = async () => {
-    setCommitsLoading(true)
-    try {
-      // Try to fetch from GitHub API (public repo)
-      const response = await fetch('https://api.github.com/repos/anthropics/daily-games-hub/commits?per_page=5')
-      if (response.ok) {
-        const data = await response.json()
-        setCommits(data.map(c => ({
-          sha: c.sha.substring(0, 7),
-          message: c.commit.message.split('\n')[0],
-          date: new Date(c.commit.author.date).toLocaleDateString()
-        })))
-      }
-    } catch (error) {
-      // If API fails, use hardcoded recent commits
-      setCommits([
-        { sha: '52453fa', message: 'Fix FriendGroupServiceTest to use FriendGroupRequest', date: new Date().toLocaleDateString() },
-        { sha: '12fc431', message: 'Add features, tests, and CI/CD pipeline', date: new Date().toLocaleDateString() },
-        { sha: '3668714', message: 'Add Railway configuration for backend and frontend', date: new Date().toLocaleDateString() },
-        { sha: 'd28caab', message: 'Initial commit: Daily Games Hub', date: new Date().toLocaleDateString() }
-      ])
-    } finally {
-      setCommitsLoading(false)
-    }
-  }
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target
@@ -161,8 +146,31 @@ function Settings() {
         {/* Theme Selection */}
         <div style={{ marginBottom: '1.5rem' }}>
           <label className="form-label">{t('settings.selectTheme')}</label>
+          {/* Light themes row */}
+          <div style={{ marginBottom: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Light Themes</div>
+          <div className="theme-grid" style={{ marginBottom: '1rem' }}>
+            {themes.filter(t => !t.isDark).map((t) => (
+              <button
+                key={t.id}
+                className={`theme-option ${theme === t.id ? 'active' : ''}`}
+                onClick={() => setTheme(t.id)}
+                data-theme-preview={t.id}
+              >
+                <div className="theme-preview">
+                  <div className="theme-preview-header"></div>
+                  <div className="theme-preview-content">
+                    <div className="theme-preview-card"></div>
+                    <div className="theme-preview-card"></div>
+                  </div>
+                </div>
+                <span className="theme-name">{t.name}</span>
+              </button>
+            ))}
+          </div>
+          {/* Dark themes row */}
+          <div style={{ marginBottom: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Dark Themes</div>
           <div className="theme-grid">
-            {themes.map((t) => (
+            {themes.filter(t => t.isDark).map((t) => (
               <button
                 key={t.id}
                 className={`theme-option ${theme === t.id ? 'active' : ''}`}
@@ -327,19 +335,12 @@ function Settings() {
       {/* Version Info */}
       <div className="version-info">
         <h4>Scordle v{APP_VERSION}</h4>
-        <p style={{ marginBottom: '0.75rem' }}>Latest updates:</p>
-        {commitsLoading ? (
-          <p>Loading...</p>
-        ) : (
-          <ul className="commit-list">
-            {commits.map((commit, index) => (
-              <li key={index}>
-                <span style={{ color: 'var(--primary-color)' }}>{commit.sha}</span>{' '}
-                {commit.message}
-              </li>
-            ))}
-          </ul>
-        )}
+        <p style={{ marginBottom: '0.75rem' }}>What's new in this version:</p>
+        <ul className="patch-notes-list">
+          {PATCH_NOTES.map((note, index) => (
+            <li key={index}>{note}</li>
+          ))}
+        </ul>
       </div>
     </div>
   )

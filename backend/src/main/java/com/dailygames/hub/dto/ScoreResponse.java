@@ -19,5 +19,6 @@ public class ScoreResponse {
     private Boolean solved;
     private Integer score;
     private Integer timeSeconds;
+    private Integer ratingChange;
     private LocalDateTime submittedAt;
 }

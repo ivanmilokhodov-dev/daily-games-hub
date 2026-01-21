@@ -12,7 +12,8 @@ import com.dailygames.hub.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -84,7 +85,63 @@ public class UserProfileService {
             response.setFriendshipStatus(friendshipService.getFriendshipStatus(currentUser, profileUser));
         }
 
+        // Calculate rating history (daily average rating)
+        response.setRatingHistory(calculateRatingHistory(recentScores, profileUser.getAverageRating()));
+
         return response;
+    }
+
+    private List<UserProfileResponse.RatingHistoryPoint> calculateRatingHistory(List<Score> scores, int currentRating) {
+        if (scores.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Sort scores by date ascending for calculation
+        List<Score> sortedScores = scores.stream()
+            .sorted(Comparator.comparing(Score::getGameDate).thenComparing(Score::getSubmittedAt))
+            .collect(Collectors.toList());
+
+        // Group by date and calculate cumulative rating change per day
+        Map<LocalDate, Integer> dailyRatingChange = new LinkedHashMap<>();
+        for (Score score : sortedScores) {
+            if (score.getRatingChange() != null) {
+                dailyRatingChange.merge(score.getGameDate(), score.getRatingChange(), Integer::sum);
+            }
+        }
+
+        // Build rating history by working backwards from current rating
+        List<UserProfileResponse.RatingHistoryPoint> history = new ArrayList<>();
+        int rating = currentRating;
+
+        // Work backwards through the dates
+        List<LocalDate> dates = new ArrayList<>(dailyRatingChange.keySet());
+        Collections.reverse(dates);
+
+        // First add current rating
+        if (!dates.isEmpty()) {
+            UserProfileResponse.RatingHistoryPoint currentPoint = new UserProfileResponse.RatingHistoryPoint();
+            currentPoint.setDate(LocalDate.now());
+            currentPoint.setRating(rating);
+            history.add(0, currentPoint);
+
+            // Work backwards
+            for (LocalDate date : dates) {
+                if (!date.equals(LocalDate.now())) {
+                    rating -= dailyRatingChange.get(date);
+                    UserProfileResponse.RatingHistoryPoint point = new UserProfileResponse.RatingHistoryPoint();
+                    point.setDate(date);
+                    point.setRating(rating);
+                    history.add(0, point);
+                }
+            }
+        }
+
+        // Limit to last 30 entries
+        if (history.size() > 30) {
+            history = history.subList(history.size() - 30, history.size());
+        }
+
+        return history;
     }
 
     private ScoreResponse mapScoreToResponse(Score score) {
@@ -100,6 +157,7 @@ public class UserProfileService {
         response.setSolved(score.getSolved());
         response.setScore(score.getScore());
         response.setTimeSeconds(score.getTimeSeconds());
+        response.setRatingChange(score.getRatingChange());
         response.setSubmittedAt(score.getSubmittedAt());
         return response;
     }

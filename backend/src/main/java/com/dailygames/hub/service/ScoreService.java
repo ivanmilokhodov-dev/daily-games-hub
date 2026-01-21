@@ -44,19 +44,21 @@ public class ScoreService {
         score.setScore(request.getScore());
         score.setTimeSeconds(request.getTimeSeconds());
 
-        Score saved = scoreRepository.save(score);
-
         // Update game-specific streak
         updateStreak(user, request.getGameType(), gameDate);
 
         // Update global day streak
         updateGlobalDayStreak(user, gameDate);
 
-        // Update rating
-        ratingService.updateRating(user, request.getGameType(),
+        // Update rating and get the change
+        int ratingChange = ratingService.updateRating(user, request.getGameType(),
             Boolean.TRUE.equals(request.getSolved()),
             request.getAttempts() != null ? request.getAttempts() : 1,
             request.getScore());
+
+        // Save the rating change with the score
+        score.setRatingChange(ratingChange);
+        Score saved = scoreRepository.save(score);
 
         // Update group streaks for all groups the user is in
         updateGroupStreaks(user, gameDate);
@@ -175,6 +177,7 @@ public class ScoreService {
         response.setSolved(score.getSolved());
         response.setScore(score.getScore());
         response.setTimeSeconds(score.getTimeSeconds());
+        response.setRatingChange(score.getRatingChange());
         response.setSubmittedAt(score.getSubmittedAt());
         return response;
     }

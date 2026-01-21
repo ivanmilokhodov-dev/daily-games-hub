@@ -21,4 +21,11 @@ public class UserProfileResponse {
     private Integer totalGamesPlayed;
     private String friendshipStatus; // null, PENDING, ACCEPTED, SENT
     private Boolean isOwnProfile;
+    private List<RatingHistoryPoint> ratingHistory;
+
+    @Data
+    public static class RatingHistoryPoint {
+        private LocalDate date;
+        private Integer rating;
+    }
 }

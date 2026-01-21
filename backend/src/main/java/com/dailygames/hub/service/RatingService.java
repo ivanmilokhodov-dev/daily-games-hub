@@ -24,7 +24,7 @@ public class RatingService {
     private static final int BASE_RATING = 1000;
 
     @Transactional
-    public void updateRating(User user, GameType gameType, boolean solved, int attempts, Integer score) {
+    public int updateRating(User user, GameType gameType, boolean solved, int attempts, Integer score) {
         Rating rating = ratingRepository.findByUserAndGameType(user, gameType)
             .orElseGet(() -> {
                 Rating newRating = new Rating();
@@ -64,6 +64,8 @@ public class RatingService {
 
         // Update user's average rating
         updateAverageRating(user);
+
+        return ratingChange;
     }
 
     private int getMaxAttemptsForGame(GameType gameType) {

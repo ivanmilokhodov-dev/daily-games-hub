@@ -86,17 +86,20 @@ function SubmitScore() {
     // Example: Spotle #1362🎧 ⬜️⬜️⬜️⬜️⬜️⬜️⬜️🟩 or ⬜⬜⬜⬜⬜⬜⬜⬜⬜❌
     else if (result.includes('spotle') || result.includes('#spotle')) {
       updates.gameType = 'SPOTLE'
-      // Count emoji squares to determine attempts
-      const squares = rawResult.match(/[⬜️⬜🟩❌]/g) || []
-      if (squares.length > 0) {
-        updates.attempts = String(squares.length)
-      }
-      // Check for fail (❌) or success (🟩)
+
+      // Check for fail (❌) first
       if (rawResult.includes('❌') || result.includes('x/')) {
         updates.solved = 'false'
         updates.attempts = '10'
       } else if (rawResult.includes('🟩')) {
         updates.solved = 'true'
+        // Count squares before green + 1 for the green square
+        // Split by green to get the part before it
+        const beforeGreen = rawResult.split('🟩')[0]
+        // Remove variation selectors and count white squares
+        const whiteSquares = beforeGreen.replace(/\uFE0F/g, '').match(/⬜|⬛/g) || []
+        // Attempts = white squares + 1 (for the green)
+        updates.attempts = String(whiteSquares.length + 1)
       }
     }
     // Bandle - song guessing from clips (6 guesses max)
@@ -183,9 +186,19 @@ function SubmitScore() {
     else if (result.includes('contexto') || result.includes('#contexto')) {
       updates.gameType = 'CONTEXTO'
       // Pattern: "I played contexto #XXX and got it in YY guesses"
-      const match = rawResult.match(/(\d+)\s*(guesses|guess|tentativas)/i)
-      if (match) {
-        updates.attempts = match[1]
+      const guessMatch = rawResult.match(/(\d+)\s*(guesses|guess|tentativas)/i)
+      const hintMatch = rawResult.match(/(\d+)\s*hints?/i)
+
+      let totalAttempts = 0
+      if (guessMatch) {
+        totalAttempts += parseInt(guessMatch[1])
+      }
+      if (hintMatch) {
+        // Each hint counts as 5 guesses
+        totalAttempts += parseInt(hintMatch[1]) * 5
+      }
+      if (totalAttempts > 0) {
+        updates.attempts = String(totalAttempts)
         updates.solved = 'true'
       }
       if (result.includes('gave up') || result.includes('❌')) {

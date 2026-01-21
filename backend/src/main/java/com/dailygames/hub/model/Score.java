@@ -43,6 +43,8 @@ public class Score {
 
     private Integer timeSeconds;
 
+    private Integer ratingChange;
+
     @Column(nullable = false)
     private LocalDateTime submittedAt = LocalDateTime.now();
 }
