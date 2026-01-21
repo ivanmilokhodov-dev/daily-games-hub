@@ -1,19 +1,17 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 
 function UserProfile() {
   const { t } = useTranslation()
   const { username } = useParams()
-  const { user: currentUser } = useAuth()
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [friendAction, setFriendAction] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedScore, setSelectedScore] = useState(null)
+  const [filters, setFilters] = useState({ gameType: '', dateFrom: '', dateTo: '' })
   const itemsPerPage = 10
 
   useEffect(() => {
@@ -32,46 +30,23 @@ function UserProfile() {
     }
   }
 
-  const handleAddFriend = async () => {
-    try {
-      setFriendAction(true)
-      await api.post(`/api/friends/request/${profile.id}`)
-      setProfile(prev => ({ ...prev, friendshipStatus: 'SENT' }))
-    } catch (err) {
-      setError(err.response?.data?.message || t('profile.friendRequestFailed'))
-    } finally {
-      setFriendAction(false)
-    }
+  const getFilteredScores = () => {
+    if (!profile?.recentScores) return []
+    return profile.recentScores.filter(score => {
+      if (filters.gameType && score.gameType !== filters.gameType) return false
+      if (filters.dateFrom && score.gameDate < filters.dateFrom) return false
+      if (filters.dateTo && score.gameDate > filters.dateTo) return false
+      return true
+    })
   }
 
-  const handleAcceptFriend = async () => {
-    try {
-      setFriendAction(true)
-      // Need to get friendship ID - fetch pending requests
-      const pending = await api.get('/api/friends/requests/pending')
-      const request = pending.data.find(r => r.friendId === profile.id)
-      if (request) {
-        await api.post(`/api/friends/accept/${request.id}`)
-        setProfile(prev => ({ ...prev, friendshipStatus: 'ACCEPTED' }))
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || t('profile.acceptFailed'))
-    } finally {
-      setFriendAction(false)
-    }
-  }
-
-  const handleRemoveFriend = async () => {
-    if (!confirm(t('profile.confirmRemoveFriend'))) return
-    try {
-      setFriendAction(true)
-      await api.delete(`/api/friends/${profile.id}`)
-      setProfile(prev => ({ ...prev, friendshipStatus: null }))
-    } catch (err) {
-      setError(err.response?.data?.message || t('profile.removeFailed'))
-    } finally {
-      setFriendAction(false)
-    }
+  const getUniqueGameTypes = () => {
+    if (!profile?.recentScores) return []
+    const types = [...new Set(profile.recentScores.map(s => s.gameType))]
+    return types.map(type => {
+      const score = profile.recentScores.find(s => s.gameType === type)
+      return { type, displayName: score?.gameDisplayName || type }
+    })
   }
 
   if (loading) {
@@ -109,47 +84,6 @@ function UserProfile() {
               </span>
             </div>
           </div>
-          {!profile.isOwnProfile && (
-            <div className="profile-actions">
-              {profile.friendshipStatus === null && (
-                <button
-                  className="btn btn-primary"
-                  onClick={handleAddFriend}
-                  disabled={friendAction}
-                >
-                  {t('profile.addFriend')}
-                </button>
-              )}
-              {profile.friendshipStatus === 'SENT' && (
-                <button className="btn btn-secondary" disabled>
-                  {t('profile.requestSent')}
-                </button>
-              )}
-              {profile.friendshipStatus === 'PENDING' && (
-                <button
-                  className="btn btn-primary"
-                  onClick={handleAcceptFriend}
-                  disabled={friendAction}
-                >
-                  {t('profile.acceptRequest')}
-                </button>
-              )}
-              {profile.friendshipStatus === 'ACCEPTED' && (
-                <>
-                  <Link to={`/messages/${profile.id}`} className="btn btn-primary">
-                    {t('profile.message')}
-                  </Link>
-                  <button
-                    className="btn btn-danger btn-small"
-                    onClick={handleRemoveFriend}
-                    disabled={friendAction}
-                  >
-                    {t('profile.removeFriend')}
-                  </button>
-                </>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -207,7 +141,7 @@ function UserProfile() {
       </div>
 
       {/* Rating History Graph */}
-      {profile.ratingHistory && profile.ratingHistory.length > 1 && (
+      {profile.ratingHistory && profile.ratingHistory.length >= 1 && (
         <div className="card">
           <div className="card-header">
             <h2 className="card-title">Average Rating History</h2>
@@ -216,11 +150,25 @@ function UserProfile() {
             <svg viewBox="0 0 400 120" className="rating-chart">
               {(() => {
                 const data = profile.ratingHistory
-                if (data.length < 2) return null
+                if (data.length === 0) return null
+
                 const maxRating = Math.max(...data.map(d => d.rating))
                 const minRating = Math.min(...data.map(d => d.rating))
                 const range = maxRating - minRating || 100
                 const padding = range * 0.15
+
+                // Single data point - show centered
+                if (data.length === 1) {
+                  return (
+                    <>
+                      <line x1="25" y1="60" x2="395" y2="60" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4" />
+                      <text x="5" y="64" fontSize="9" fill="var(--text-secondary)">{data[0].rating}</text>
+                      <circle cx="210" cy="60" r="6" fill="var(--primary-color)">
+                        <title>{data[0].date}: {data[0].rating}</title>
+                      </circle>
+                    </>
+                  )
+                }
 
                 const points = data.map((d, i) => {
                   const x = (i / (data.length - 1)) * 370 + 25
@@ -277,6 +225,41 @@ function UserProfile() {
         </div>
         {profile.recentScores && profile.recentScores.length > 0 ? (
           <>
+            {/* Filters */}
+            <div className="game-history-filters">
+              <select
+                className="form-input filter-select"
+                value={filters.gameType}
+                onChange={(e) => { setFilters(f => ({ ...f, gameType: e.target.value })); setCurrentPage(1); }}
+              >
+                <option value="">All Games</option>
+                {getUniqueGameTypes().map(g => (
+                  <option key={g.type} value={g.type}>{g.displayName}</option>
+                ))}
+              </select>
+              <input
+                type="date"
+                className="form-input filter-date"
+                value={filters.dateFrom}
+                onChange={(e) => { setFilters(f => ({ ...f, dateFrom: e.target.value })); setCurrentPage(1); }}
+                placeholder="From"
+              />
+              <input
+                type="date"
+                className="form-input filter-date"
+                value={filters.dateTo}
+                onChange={(e) => { setFilters(f => ({ ...f, dateTo: e.target.value })); setCurrentPage(1); }}
+                placeholder="To"
+              />
+              {(filters.gameType || filters.dateFrom || filters.dateTo) && (
+                <button
+                  className="btn btn-small btn-outline"
+                  onClick={() => { setFilters({ gameType: '', dateFrom: '', dateTo: '' }); setCurrentPage(1); }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
             <div className="game-history-table">
               <div className="game-history-header">
                 <div className="game-history-cell game-col">Game</div>
@@ -284,7 +267,7 @@ function UserProfile() {
                 <div className="game-history-cell result-col">Result</div>
                 <div className="game-history-cell rating-col">Rating</div>
               </div>
-              {profile.recentScores
+              {getFilteredScores()
                 .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                 .map(score => (
                   <div
@@ -327,7 +310,7 @@ function UserProfile() {
                   </div>
                 ))}
             </div>
-            {Math.ceil(profile.recentScores.length / itemsPerPage) > 1 && (
+            {Math.ceil(getFilteredScores().length / itemsPerPage) > 1 && (
               <div className="pagination">
                 <button
                   className="btn btn-small btn-outline"
@@ -337,15 +320,20 @@ function UserProfile() {
                   Previous
                 </button>
                 <span className="pagination-info">
-                  Page {currentPage} of {Math.ceil(profile.recentScores.length / itemsPerPage)}
+                  Page {currentPage} of {Math.ceil(getFilteredScores().length / itemsPerPage)}
                 </span>
                 <button
                   className="btn btn-small btn-outline"
-                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(profile.recentScores.length / itemsPerPage), p + 1))}
-                  disabled={currentPage === Math.ceil(profile.recentScores.length / itemsPerPage)}
+                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(getFilteredScores().length / itemsPerPage), p + 1))}
+                  disabled={currentPage === Math.ceil(getFilteredScores().length / itemsPerPage)}
                 >
                   Next
                 </button>
+              </div>
+            )}
+            {getFilteredScores().length === 0 && (filters.gameType || filters.dateFrom || filters.dateTo) && (
+              <div className="empty-state" style={{ padding: '1rem' }}>
+                <p>No games match your filters</p>
               </div>
             )}
           </>
