@@ -153,8 +153,12 @@ public class FriendGroupService {
         if (lastActive == null) {
             group.setGroupStreak(1);
             group.setLongestGroupStreak(1);
+            group.setLastActiveDate(gameDate);
         } else if (lastActive.equals(gameDate)) {
-            // Already counted for today
+            // Already counted for this date
+            return;
+        } else if (gameDate.isBefore(lastActive)) {
+            // Submitting for an older date - don't change streak or lastActiveDate
             return;
         } else if (lastActive.plusDays(1).equals(gameDate)) {
             // Consecutive day
@@ -162,12 +166,13 @@ public class FriendGroupService {
             if (group.getGroupStreak() > group.getLongestGroupStreak()) {
                 group.setLongestGroupStreak(group.getGroupStreak());
             }
+            group.setLastActiveDate(gameDate);
         } else {
-            // Streak broken
+            // Streak broken (gap of more than 1 day)
             group.setGroupStreak(1);
+            group.setLastActiveDate(gameDate);
         }
 
-        group.setLastActiveDate(gameDate);
         friendGroupRepository.save(group);
     }
 
@@ -183,8 +188,11 @@ public class FriendGroupService {
         response.setOwnerUsername(group.getOwner().getUsername());
         response.setOwnerId(group.getOwner().getId());
         response.setCreatedAt(group.getCreatedAt());
-        response.setGroupStreak(group.getGroupStreak());
-        response.setLongestGroupStreak(group.getLongestGroupStreak());
+
+        // Calculate streak dynamically from actual scores
+        int calculatedStreak = calculateGroupStreakFromScores(group);
+        response.setGroupStreak(calculatedStreak);
+        response.setLongestGroupStreak(Math.max(group.getLongestGroupStreak(), calculatedStreak));
 
         List<FriendGroupResponse.MemberInfo> memberList = group.getMembers().stream()
             .map(member -> {
@@ -203,6 +211,54 @@ public class FriendGroupService {
         response.setStats(calculateGroupStats(group));
 
         return response;
+    }
+
+    private int calculateGroupStreakFromScores(FriendGroup group) {
+        List<User> members = new ArrayList<>(group.getMembers());
+        if (members.isEmpty()) {
+            return 0;
+        }
+
+        // Get all distinct dates when any group member played, sorted descending
+        List<LocalDate> activeDates = scoreRepository.findDistinctDatesByUsers(members);
+        if (activeDates.isEmpty()) {
+            return 0;
+        }
+
+        LocalDate groupCreationDate = group.getCreatedAt().toLocalDate();
+        LocalDate today = LocalDate.now();
+
+        // Find the streak starting from today going backwards
+        int streak = 0;
+        LocalDate expectedDate = today;
+
+        for (LocalDate date : activeDates) {
+            // Skip future dates
+            if (date.isAfter(today)) {
+                continue;
+            }
+
+            // If we haven't started counting yet and this date is before today,
+            // start from this date instead
+            if (streak == 0 && date.isBefore(today)) {
+                expectedDate = date;
+            }
+
+            if (date.equals(expectedDate)) {
+                streak++;
+                expectedDate = expectedDate.minusDays(1);
+
+                // Don't count before group creation
+                if (expectedDate.isBefore(groupCreationDate)) {
+                    break;
+                }
+            } else if (date.isBefore(expectedDate)) {
+                // Gap found - streak is broken
+                break;
+            }
+        }
+
+        return streak;
     }
 
     private FriendGroupResponse.GroupStats calculateGroupStats(FriendGroup group) {

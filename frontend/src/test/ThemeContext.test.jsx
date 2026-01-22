@@ -105,12 +105,14 @@ describe('ThemeContext', () => {
   })
 
   it('should have correct themes defined', () => {
-    expect(themes).toHaveLength(6)
+    expect(themes).toHaveLength(8)
     expect(themes.map(t => t.id)).toContain('light')
     expect(themes.map(t => t.id)).toContain('dark')
-    expect(themes.map(t => t.id)).toContain('sunset')
+    expect(themes.map(t => t.id)).toContain('sky')
     expect(themes.map(t => t.id)).toContain('ocean')
     expect(themes.map(t => t.id)).toContain('forest')
+    expect(themes.map(t => t.id)).toContain('emerald')
+    expect(themes.map(t => t.id)).toContain('lavender')
     expect(themes.map(t => t.id)).toContain('midnight')
   })
 })

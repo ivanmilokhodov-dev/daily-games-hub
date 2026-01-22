@@ -74,8 +74,12 @@ public class ScoreService {
             if (lastActive == null) {
                 group.setGroupStreak(1);
                 group.setLongestGroupStreak(1);
+                group.setLastActiveDate(gameDate);
             } else if (lastActive.equals(gameDate)) {
-                // Already counted for today
+                // Already counted for this date
+                continue;
+            } else if (gameDate.isBefore(lastActive)) {
+                // Submitting for an older date - don't change streak or lastActiveDate
                 continue;
             } else if (lastActive.plusDays(1).equals(gameDate)) {
                 // Consecutive day
@@ -83,12 +87,13 @@ public class ScoreService {
                 if (group.getGroupStreak() > group.getLongestGroupStreak()) {
                     group.setLongestGroupStreak(group.getGroupStreak());
                 }
+                group.setLastActiveDate(gameDate);
             } else {
-                // Streak broken
+                // Streak broken (gap of more than 1 day)
                 group.setGroupStreak(1);
+                group.setLastActiveDate(gameDate);
             }
 
-            group.setLastActiveDate(gameDate);
             friendGroupRepository.save(group);
         }
     }
@@ -100,8 +105,12 @@ public class ScoreService {
             // First game ever
             user.setGlobalDayStreak(1);
             user.setLongestGlobalStreak(1);
+            user.setLastActiveDate(gameDate);
         } else if (lastActive.equals(gameDate)) {
-            // Already played today, no change to streak
+            // Already played for this date, no change to streak
+            return;
+        } else if (gameDate.isBefore(lastActive)) {
+            // Submitting for an older date - don't change streak or lastActiveDate
             return;
         } else if (lastActive.plusDays(1).equals(gameDate)) {
             // Consecutive day
@@ -109,12 +118,13 @@ public class ScoreService {
             if (user.getGlobalDayStreak() > user.getLongestGlobalStreak()) {
                 user.setLongestGlobalStreak(user.getGlobalDayStreak());
             }
+            user.setLastActiveDate(gameDate);
         } else {
-            // Streak broken
+            // Streak broken (gap of more than 1 day)
             user.setGlobalDayStreak(1);
+            user.setLastActiveDate(gameDate);
         }
 
-        user.setLastActiveDate(gameDate);
         userRepository.save(user);
     }
 
@@ -131,18 +141,30 @@ public class ScoreService {
 
         LocalDate lastPlayed = streak.getLastPlayedDate();
 
-        if (lastPlayed == null || lastPlayed.plusDays(1).equals(gameDate)) {
-            // Continuing or starting streak
+        if (lastPlayed == null) {
+            // Starting new streak
+            streak.setCurrentStreak(1);
+            streak.setLongestStreak(1);
+            streak.setLastPlayedDate(gameDate);
+        } else if (lastPlayed.equals(gameDate)) {
+            // Already played this game for this date
+            return;
+        } else if (gameDate.isBefore(lastPlayed)) {
+            // Submitting for an older date - don't change streak
+            return;
+        } else if (lastPlayed.plusDays(1).equals(gameDate)) {
+            // Continuing streak
             streak.setCurrentStreak(streak.getCurrentStreak() + 1);
             if (streak.getCurrentStreak() > streak.getLongestStreak()) {
                 streak.setLongestStreak(streak.getCurrentStreak());
             }
-        } else if (!lastPlayed.equals(gameDate)) {
+            streak.setLastPlayedDate(gameDate);
+        } else {
             // Streak broken, start new one
             streak.setCurrentStreak(1);
+            streak.setLastPlayedDate(gameDate);
         }
 
-        streak.setLastPlayedDate(gameDate);
         streakRepository.save(streak);
     }
 

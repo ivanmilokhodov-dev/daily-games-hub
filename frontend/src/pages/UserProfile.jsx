@@ -75,6 +75,11 @@ function UserProfile() {
           <div className="profile-info">
             <h1>{profile.displayName || profile.username}</h1>
             <p className="profile-username">@{profile.username}</p>
+            {profile.createdAt && (
+              <p className="profile-joined" style={{ margin: '0.25rem 0 0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                {t('profile.joined')} {new Date(profile.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+            )}
             <div className="profile-stats-inline">
               <span className="streak-badge active">
                 {profile.globalDayStreak} {t('profile.dayStreak')}

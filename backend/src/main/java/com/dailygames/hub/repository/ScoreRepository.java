@@ -34,4 +34,7 @@ public interface ScoreRepository extends JpaRepository<Score, Long> {
     long countByGameTypeAndGameDate(GameType gameType, LocalDate gameDate);
 
     long countByGameDate(LocalDate gameDate);
+
+    @Query("SELECT DISTINCT s.gameDate FROM Score s WHERE s.user IN :users ORDER BY s.gameDate DESC")
+    List<LocalDate> findDistinctDatesByUsers(@Param("users") List<User> users);
 }

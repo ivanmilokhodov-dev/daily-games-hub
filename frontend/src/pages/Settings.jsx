@@ -11,23 +11,16 @@ const languages = [
 ]
 
 // Version info - updated manually or via build process
-const APP_VERSION = '1.2.0'
+const APP_VERSION = '1.3.0'
 
 // Patch notes for current version
 const PATCH_NOTES = [
-  'Average rating history graph on user profiles',
-  'Rating changes now tracked and displayed for each game',
-  'Recent activity sorted by submission time (newest first)',
-  'New theme pairs: Sky (light blue), Emerald (dark green), Lavender (light purple)',
-  'Themes displayed in light/dark rows for easier selection',
-  'Game history with pagination (10 per page) and clickable rows',
-  'Member names in groups clickable to view profiles',
-  'Clicking expanded group collapses it',
-  'Past dates show "Scores for [date]" instead of "Today\'s Scores"',
-  'Mobile: Profile avatar with dropdown for settings/logout',
-  'Mobile: Fixed groups expanded view UI',
-  'Fixed Spotle score parsing',
-  'Contexto hints count as 5 guesses (same as Semantle)'
+  'Game history filters: filter by game type and date range',
+  'Desktop: Profile avatar next to username in navbar',
+  'Mobile: Close button to collapse expanded group view',
+  'Fixed streak calculation when submitting scores out of order',
+  'Removed friend system (profiles are now view-only)',
+  'Improved streak logic to handle past date submissions correctly'
 ]
 
 function Settings() {
