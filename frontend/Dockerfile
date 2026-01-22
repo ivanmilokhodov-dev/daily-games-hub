@@ -3,8 +3,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
+# Hardcode the API URL for Railway deployment
+ENV VITE_API_URL=https://scordle-backend-production.up.railway.app
 RUN npm run build
 
 FROM nginx:alpine
