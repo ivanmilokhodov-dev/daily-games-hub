@@ -1,14 +1,5 @@
 [build]
-builder = "nixpacks"
-
-[build.nixpacksPlan.phases.setup]
-nixPkgs = ["nodejs_18"]
-
-[build.nixpacksPlan.phases.install]
-cmds = ["npm ci"]
-
-[build.nixpacksPlan.phases.build]
-cmds = ["npm run build"]
+builder = "dockerfile"
 
 [deploy]
-startCommand = "npx serve dist -s -l $PORT"
+startCommand = "nginx -g 'daemon off;'"

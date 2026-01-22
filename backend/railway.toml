@@ -1,15 +1,7 @@
 [build]
-builder = "nixpacks"
-
-[build.nixpacksPlan.phases.setup]
-nixPkgs = ["jdk17", "maven"]
-
-[build.nixpacksPlan.phases.build]
-cmds = ["mvn clean package -DskipTests"]
+builder = "dockerfile"
 
 [deploy]
-startCommand = "java -jar target/*.jar"
-healthcheckPath = "/api/games"
-healthcheckTimeout = 300
+startCommand = "java -jar app.jar"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
