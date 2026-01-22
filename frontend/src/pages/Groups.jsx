@@ -13,7 +13,6 @@ function Groups() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showJoinModal, setShowJoinModal] = useState(false)
   const [showRenameModal, setShowRenameModal] = useState(false)
-  const [showManageModal, setShowManageModal] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [showScoreModal, setShowScoreModal] = useState(false)
   const [selectedGroup, setSelectedGroup] = useState(null)
@@ -353,16 +352,16 @@ function Groups() {
 
         {selectedGroup && (
           <div className="card group-details-panel">
-            <div className="card-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div className="group-details-header">
+              <div className="group-details-title-row">
                 <button
                   className="btn btn-small btn-outline mobile-only-close"
                   onClick={() => setSelectedGroup(null)}
-                  style={{ padding: '0.25rem 0.5rem' }}
+                  aria-label="Back"
                 >
                   ←
                 </button>
-                <div>
+                <div className="group-details-title">
                   <h2 className="card-title" style={{ margin: 0 }}>{selectedGroup.name}</h2>
                   {selectedGroup.groupStreak > 0 && (
                     <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: 'var(--primary-color)' }}>
@@ -371,22 +370,14 @@ function Groups() {
                   )}
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div className="group-details-actions">
                 {isOwner && (
-                  <>
-                    <button
-                      className="btn btn-small btn-outline"
-                      onClick={() => { setRenameValue(selectedGroup.name); setShowRenameModal(true) }}
-                    >
-                      Rename
-                    </button>
-                    <button
-                      className="btn btn-small btn-outline"
-                      onClick={() => setShowManageModal(true)}
-                    >
-                      Manage
-                    </button>
-                  </>
+                  <button
+                    className="btn btn-small btn-outline"
+                    onClick={() => { setRenameValue(selectedGroup.name); setShowRenameModal(true) }}
+                  >
+                    Rename
+                  </button>
                 )}
                 <input
                   type="date"
@@ -440,33 +431,14 @@ function Groups() {
               </div>
             )}
 
-            {/* Members Section - Hidden by default */}
+            {/* Members Button */}
             <div style={{ marginBottom: '1rem' }}>
               <button
                 className="btn btn-small btn-outline"
-                onClick={() => setShowMembers(!showMembers)}
-                style={{ marginBottom: showMembers ? '0.5rem' : 0 }}
+                onClick={() => setShowMembers(true)}
               >
-                {showMembers ? 'Hide Members' : `Show Members (${selectedGroup.members?.length || 0})`}
+                Users ({selectedGroup.members?.length || 0})
               </button>
-              {showMembers && (
-                <div style={{ padding: '0.75rem', background: 'var(--hover-background)', borderRadius: '0.5rem', marginTop: '0.5rem' }}>
-                  {selectedGroup.members?.map((m, i) => (
-                    <span key={m.id}>
-                      <Link
-                        to={`/profile/${m.username}`}
-                        style={{ color: 'var(--primary-color)', textDecoration: 'none' }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {m.displayName || m.username}
-                      </Link>
-                      {m.username === selectedGroup.ownerUsername && ` (${t('groups.owner')})`}
-                      {m.globalDayStreak > 0 && ` [${m.globalDayStreak}d]`}
-                      {i < selectedGroup.members.length - 1 && ', '}
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
 
             <h3 style={{ marginBottom: '1rem' }}>
@@ -566,25 +538,39 @@ function Groups() {
         </div>
       )}
 
-      {/* Manage Members Modal */}
-      {showManageModal && selectedGroup && (
-        <div className="modal-overlay" onClick={() => !actionLoading && setShowManageModal(false)}>
-          <div className="modal" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
+      {/* Users Modal */}
+      {showMembers && selectedGroup && (
+        <div className="modal-overlay" onClick={() => !actionLoading && setShowMembers(false)}>
+          <div className="modal users-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Manage Members</h2>
-              <button className="modal-close" onClick={() => setShowManageModal(false)} disabled={actionLoading}>&times;</button>
+              <h2>Group Members</h2>
+              <button className="modal-close" onClick={() => setShowMembers(false)} disabled={actionLoading}>&times;</button>
             </div>
             <div className="modal-body">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {selectedGroup.members?.map((member) => (
-                  <div key={member.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'var(--hover-background)', borderRadius: '0.5rem' }}>
-                    <div>
-                      <span style={{ fontWeight: '500' }}>{member.displayName || member.username}</span>
-                      {member.username === selectedGroup.ownerUsername && (
-                        <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: 'var(--primary-color)' }}>Owner</span>
-                      )}
+              <div className="users-list">
+                {[...selectedGroup.members]
+                  .sort((a, b) => (b.globalDayStreak || 0) - (a.globalDayStreak || 0))
+                  .map((member, index) => (
+                  <div key={member.id} className="user-card">
+                    <div className="user-rank">#{index + 1}</div>
+                    <div className="user-info">
+                      <Link
+                        to={`/profile/${member.username}`}
+                        className="user-name"
+                        onClick={() => setShowMembers(false)}
+                      >
+                        {member.displayName || member.username}
+                      </Link>
+                      <div className="user-details">
+                        {member.username === selectedGroup.ownerUsername && (
+                          <span className="user-badge owner">Owner</span>
+                        )}
+                        {member.globalDayStreak > 0 && (
+                          <span className="user-streak">{member.globalDayStreak} day streak</span>
+                        )}
+                      </div>
                     </div>
-                    {member.username !== selectedGroup.ownerUsername && (
+                    {isOwner && member.username !== selectedGroup.ownerUsername && (
                       <button
                         className="btn btn-small btn-danger"
                         onClick={() => handleRemoveMember(member.id)}

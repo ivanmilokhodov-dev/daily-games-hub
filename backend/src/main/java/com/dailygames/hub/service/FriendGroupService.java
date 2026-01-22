@@ -219,46 +219,37 @@ public class FriendGroupService {
             return 0;
         }
 
-        // Get all distinct dates when any group member played, sorted descending
+        // Get all distinct dates when any group member played
         List<LocalDate> activeDates = scoreRepository.findDistinctDatesByUsers(members);
         if (activeDates.isEmpty()) {
             return 0;
         }
 
-        LocalDate groupCreationDate = group.getCreatedAt().toLocalDate();
-        LocalDate today = LocalDate.now();
+        // Sort dates ascending
+        List<LocalDate> sortedDates = activeDates.stream()
+            .sorted()
+            .collect(Collectors.toList());
 
-        // Find the streak starting from today going backwards
-        int streak = 0;
-        LocalDate expectedDate = today;
+        // Calculate the longest consecutive streak by checking actual dates
+        int longestStreak = 1;
+        int currentStreak = 1;
 
-        for (LocalDate date : activeDates) {
-            // Skip future dates
-            if (date.isAfter(today)) {
-                continue;
-            }
+        for (int i = 1; i < sortedDates.size(); i++) {
+            LocalDate prevDate = sortedDates.get(i - 1);
+            LocalDate currDate = sortedDates.get(i);
 
-            // If we haven't started counting yet and this date is before today,
-            // start from this date instead
-            if (streak == 0 && date.isBefore(today)) {
-                expectedDate = date;
-            }
-
-            if (date.equals(expectedDate)) {
-                streak++;
-                expectedDate = expectedDate.minusDays(1);
-
-                // Don't count before group creation
-                if (expectedDate.isBefore(groupCreationDate)) {
-                    break;
+            // Check if dates are consecutive (exactly 1 day apart)
+            if (prevDate.plusDays(1).equals(currDate)) {
+                currentStreak++;
+                if (currentStreak > longestStreak) {
+                    longestStreak = currentStreak;
                 }
-            } else if (date.isBefore(expectedDate)) {
-                // Gap found - streak is broken
-                break;
+            } else {
+                currentStreak = 1;
             }
         }
 
-        return streak;
+        return longestStreak;
     }
 
     private FriendGroupResponse.GroupStats calculateGroupStats(FriendGroup group) {
