@@ -2263,9 +2263,14 @@ button.user-badge {
 }
 
 .user-streak {
-  font-size: 0.8rem;
-  color: var(--primary-color);
-  font-weight: 500;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  background: var(--primary-color);
+  color: white;
 }
 
 @media (max-width: 480px) {
