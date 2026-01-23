@@ -51,7 +51,7 @@ public class User {
     private Integer averageRating = 1000;
 
     // Admin status - user ID 1 is always the primary admin
-    @Column(nullable = false)
+    // Note: nullable to allow migration on existing tables
     private Boolean isAdmin = false;
 
     @ManyToMany(mappedBy = "members")
