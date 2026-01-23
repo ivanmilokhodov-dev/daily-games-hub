@@ -96,7 +96,7 @@
     "game": "Game",
     "selectGame": "Select a game",
     "pasteResult": "Paste Your Result",
-    "pasteResultPlaceholder": "Paste your game result here (e.g., Wordle 1,234 4/6)",
+    "pasteResultPlaceholder": "Paste the result you copied from the game (use the Share button on the game website)",
     "solved": "Solved?",
     "notSure": "Not sure",
     "attempts": "Attempts/Guesses",

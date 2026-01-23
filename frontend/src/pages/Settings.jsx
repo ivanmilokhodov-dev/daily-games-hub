@@ -23,6 +23,7 @@ const PATCH_NOTES = [
   'Submit score: Shows time until next submission when duplicate detected',
   'Submit score: Game selector and fields visible after pasting result',
   'Submit score: Game detection works immediately on first paste',
+  'Submit score: Clearer placeholder text explaining to paste from game\'s Share button',
   'Groups: Manual refresh button replaces auto-updating',
   'Groups: Users modal with sort options (rating, streak, name, date joined)',
   'Groups: Your scores highlighted in group scores view',
