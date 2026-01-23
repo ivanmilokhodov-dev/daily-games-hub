@@ -5,7 +5,9 @@ import com.dailygames.hub.dto.AuthRequest;
 import com.dailygames.hub.dto.RegisterRequest;
 import com.dailygames.hub.model.User;
 import com.dailygames.hub.service.PasswordResetService;
+import com.dailygames.hub.service.RatingService;
 import com.dailygames.hub.service.UserService;
+import com.dailygames.hub.dto.RatingResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +25,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.context.annotation.Import;
 import com.dailygames.hub.config.SecurityConfig;
 import com.dailygames.hub.config.JwtAuthFilter;
+
+import java.util.List;
+import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -55,6 +60,9 @@ class AuthControllerTest {
     private PasswordResetService passwordResetService;
 
     @MockBean
+    private RatingService ratingService;
+
+    @MockBean
     private UserDetailsService userDetailsService;
 
     private User testUser;
@@ -69,6 +77,11 @@ class AuthControllerTest {
         testUser.setDisplayName("Test User");
         testUser.setGlobalDayStreak(5);
         testUser.setAverageRating(1200);
+
+        // Mock rating service to return default ratings (average 1000)
+        RatingResponse defaultRating = new RatingResponse();
+        defaultRating.setRating(1000);
+        when(ratingService.getUserRatings(any(User.class))).thenReturn(List.of(defaultRating));
     }
 
     @Test

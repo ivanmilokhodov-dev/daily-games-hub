@@ -2,6 +2,7 @@ package com.dailygames.hub.service;
 
 import com.dailygames.hub.dto.FriendGroupRequest;
 import com.dailygames.hub.dto.FriendGroupResponse;
+import com.dailygames.hub.dto.RatingResponse;
 import com.dailygames.hub.model.FriendGroup;
 import com.dailygames.hub.model.User;
 import com.dailygames.hub.repository.FriendGroupRepository;
@@ -34,6 +35,9 @@ class FriendGroupServiceTest {
     @Mock
     private ScoreRepository scoreRepository;
 
+    @Mock
+    private RatingService ratingService;
+
     @InjectMocks
     private FriendGroupService friendGroupService;
 
@@ -61,6 +65,11 @@ class FriendGroupServiceTest {
         group.setMembers(new HashSet<>(Set.of(owner)));
         group.setGroupStreak(0);
         group.setLongestGroupStreak(0);
+
+        // Mock rating service to return default ratings
+        RatingResponse defaultRating = new RatingResponse();
+        defaultRating.setRating(1000);
+        when(ratingService.getUserRatings(any(User.class))).thenReturn(List.of(defaultRating));
     }
 
     @Test
