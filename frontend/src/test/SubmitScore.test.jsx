@@ -60,8 +60,9 @@ describe('SubmitScore Page', () => {
       expect(screen.getByRole('heading', { name: /submit score/i })).toBeInTheDocument()
     })
 
+    // Initially only the textarea is visible (game selector hidden until result pasted)
     expect(screen.getByRole('textbox')).toBeInTheDocument()
-    expect(screen.getByLabelText(/game/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/paste your result/i)).toBeInTheDocument()
   })
 
   it('should fetch and display games', async () => {
@@ -76,13 +77,15 @@ describe('SubmitScore Page', () => {
     renderSubmitScore()
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/game/i)).toBeInTheDocument()
+      expect(screen.getByRole('textbox')).toBeInTheDocument()
     })
 
     const textarea = screen.getByRole('textbox')
     await userEvent.type(textarea, 'Wordle 123 4/6\n⬛🟨⬛⬛⬛\n🟩🟩🟩🟩🟩')
 
+    // After pasting, game selector should appear and game should be detected
     await waitFor(() => {
+      expect(screen.getByLabelText(/game/i)).toBeInTheDocument()
       expect(screen.getByText(/detected/i)).toBeInTheDocument()
     })
   })
@@ -101,14 +104,17 @@ describe('SubmitScore Page', () => {
     renderSubmitScore()
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/game/i)).toBeInTheDocument()
+      expect(screen.getByRole('textbox')).toBeInTheDocument()
     })
 
+    // First paste a result to show the form fields
     const textarea = screen.getByRole('textbox')
-    await userEvent.type(textarea, 'Wordle 123 4/6')
+    await userEvent.type(textarea, 'Wordle 123 4/6\n⬛🟨⬛⬛⬛\n🟩🟩🟩🟩🟩')
 
-    const select = screen.getByLabelText(/game/i)
-    await userEvent.selectOptions(select, 'WORDLE')
+    // Wait for game selector to appear after pasting
+    await waitFor(() => {
+      expect(screen.getByLabelText(/game/i)).toBeInTheDocument()
+    })
 
     const submitButton = screen.getByRole('button', { name: /submit/i })
     await userEvent.click(submitButton)
@@ -128,14 +134,17 @@ describe('SubmitScore Page', () => {
     renderSubmitScore()
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/game/i)).toBeInTheDocument()
+      expect(screen.getByRole('textbox')).toBeInTheDocument()
     })
 
+    // First paste a Wordle result to show the form fields and auto-detect game
     const textarea = screen.getByRole('textbox')
-    await userEvent.type(textarea, 'Wordle 123 4/6')
+    await userEvent.type(textarea, 'Wordle 123 4/6\n⬛🟨⬛⬛⬛\n🟩🟩🟩🟩🟩')
 
-    const select = screen.getByLabelText(/game/i)
-    await userEvent.selectOptions(select, 'WORDLE')
+    // Wait for game selector to appear after pasting
+    await waitFor(() => {
+      expect(screen.getByLabelText(/game/i)).toBeInTheDocument()
+    })
 
     const submitButton = screen.getByRole('button', { name: /submit/i })
     await userEvent.click(submitButton)
