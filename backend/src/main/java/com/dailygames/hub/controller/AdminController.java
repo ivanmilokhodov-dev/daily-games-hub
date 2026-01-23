@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.dailygames.hub.util.DateUtils;
+
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -22,7 +24,7 @@ public class AdminController {
 
     @GetMapping("/stats")
     public ResponseEntity<AdminStatsResponse> getStats() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = DateUtils.todayAmsterdam();
 
         AdminStatsResponse response = new AdminStatsResponse();
         response.setTotalUsers(userService.countUsers());

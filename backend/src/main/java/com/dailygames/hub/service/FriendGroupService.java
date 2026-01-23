@@ -2,6 +2,7 @@ package com.dailygames.hub.service;
 
 import com.dailygames.hub.dto.FriendGroupRequest;
 import com.dailygames.hub.dto.FriendGroupResponse;
+import com.dailygames.hub.dto.RatingResponse;
 import com.dailygames.hub.model.FriendGroup;
 import com.dailygames.hub.model.Score;
 import com.dailygames.hub.model.User;
@@ -10,6 +11,8 @@ import com.dailygames.hub.repository.ScoreRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.dailygames.hub.util.DateUtils;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -21,6 +24,7 @@ public class FriendGroupService {
 
     private final FriendGroupRepository friendGroupRepository;
     private final ScoreRepository scoreRepository;
+    private final RatingService ratingService;
 
     @Transactional
     public FriendGroupResponse createGroup(User owner, FriendGroupRequest request) {
@@ -201,6 +205,14 @@ public class FriendGroupService {
                 info.setUsername(member.getUsername());
                 info.setDisplayName(member.getDisplayName());
                 info.setGlobalDayStreak(member.getGlobalDayStreak());
+                info.setJoinedAt(member.getCreatedAt());
+                // Calculate average rating dynamically (includes all games, unplayed = 1000)
+                List<RatingResponse> ratings = ratingService.getUserRatings(member);
+                int avgRating = (int) ratings.stream()
+                    .mapToInt(RatingResponse::getRating)
+                    .average()
+                    .orElse(1000);
+                info.setAverageRating(avgRating);
                 return info;
             })
             .collect(Collectors.toList());
@@ -254,7 +266,7 @@ public class FriendGroupService {
 
     private FriendGroupResponse.GroupStats calculateGroupStats(FriendGroup group) {
         FriendGroupResponse.GroupStats stats = new FriendGroupResponse.GroupStats();
-        LocalDate today = LocalDate.now();
+        LocalDate today = DateUtils.todayAmsterdam();
         List<User> members = new ArrayList<>(group.getMembers());
 
         if (members.isEmpty()) {

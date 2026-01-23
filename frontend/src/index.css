@@ -881,6 +881,15 @@ a.leaderboard-user:hover .name {
   font-weight: 600;
 }
 
+.user-rating {
+  background: var(--secondary-color, #6b7280);
+  color: white;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 /* User Menu Container */
 .user-menu-container {
   position: relative;

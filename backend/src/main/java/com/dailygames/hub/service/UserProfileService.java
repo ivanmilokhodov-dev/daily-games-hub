@@ -12,6 +12,8 @@ import com.dailygames.hub.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import com.dailygames.hub.util.DateUtils;
+
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -60,12 +62,18 @@ public class UserProfileService {
         response.setGlobalDayStreak(profileUser.getGlobalDayStreak());
         response.setLongestGlobalStreak(profileUser.getLongestGlobalStreak());
         response.setLastActiveDate(profileUser.getLastActiveDate());
-        response.setAverageRating(profileUser.getAverageRating());
         response.setIsOwnProfile(currentUser != null && currentUser.getId().equals(profileUser.getId()));
 
-        // Get ratings
+        // Get ratings (includes all games, unplayed ones have default 1000 rating)
         List<RatingResponse> ratings = ratingService.getUserRatings(profileUser);
         response.setRatings(ratings);
+
+        // Calculate average rating dynamically from all games (including unplayed at 1000)
+        int avgRating = (int) ratings.stream()
+            .mapToInt(RatingResponse::getRating)
+            .average()
+            .orElse(1000);
+        response.setAverageRating(avgRating);
 
         // Calculate total games played
         int totalGames = ratings.stream()
@@ -86,7 +94,7 @@ public class UserProfileService {
         }
 
         // Calculate rating history (daily average rating)
-        response.setRatingHistory(calculateRatingHistory(recentScores, profileUser.getAverageRating()));
+        response.setRatingHistory(calculateRatingHistory(recentScores, avgRating));
 
         return response;
     }
@@ -120,13 +128,13 @@ public class UserProfileService {
         // First add current rating
         if (!dates.isEmpty()) {
             UserProfileResponse.RatingHistoryPoint currentPoint = new UserProfileResponse.RatingHistoryPoint();
-            currentPoint.setDate(LocalDate.now());
+            currentPoint.setDate(DateUtils.todayAmsterdam());
             currentPoint.setRating(rating);
             history.add(0, currentPoint);
 
             // Work backwards
             for (LocalDate date : dates) {
-                if (!date.equals(LocalDate.now())) {
+                if (!date.equals(DateUtils.todayAmsterdam())) {
                     rating -= dailyRatingChange.get(date);
                     UserProfileResponse.RatingHistoryPoint point = new UserProfileResponse.RatingHistoryPoint();
                     point.setDate(date);

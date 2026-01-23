@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import com.dailygames.hub.util.DateUtils;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -42,7 +44,7 @@ public class ScoreController {
 
     @GetMapping("/today")
     public ResponseEntity<List<ScoreResponse>> getTodayScores() {
-        return ResponseEntity.ok(scoreService.getScoresForDate(LocalDate.now()));
+        return ResponseEntity.ok(scoreService.getScoresForDate(DateUtils.todayAmsterdam()));
     }
 
     @GetMapping("/date/{date}")
@@ -56,7 +58,7 @@ public class ScoreController {
             @PathVariable Long groupId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             Authentication authentication) {
-        LocalDate queryDate = date != null ? date : LocalDate.now();
+        LocalDate queryDate = date != null ? date : DateUtils.todayAmsterdam();
         List<User> members = friendGroupService.getGroupMembers(groupId);
         return ResponseEntity.ok(scoreService.getGroupScoresForDate(members, queryDate));
     }

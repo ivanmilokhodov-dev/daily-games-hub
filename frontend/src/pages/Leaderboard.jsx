@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../services/api'
+import { getTodayAmsterdam } from '../utils/dateUtils'
 
 function Leaderboard() {
   const { t } = useTranslation()
   const [scores, setScores] = useState([])
   const [groups, setGroups] = useState([])
   const [selectedGroup, setSelectedGroup] = useState(null)
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [selectedDate, setSelectedDate] = useState(getTodayAmsterdam())
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -90,7 +91,7 @@ function Leaderboard() {
               className="form-input"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
+              max={getTodayAmsterdam()}
             />
           </div>
 

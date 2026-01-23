@@ -98,16 +98,52 @@ public class RatingService {
 
     @Transactional
     public void updateAverageRating(User user) {
-        Double avg = ratingRepository.getAverageRatingForUser(user);
-        if (avg != null) {
-            user.setAverageRating(avg.intValue());
-            userRepository.save(user);
+        // Calculate average including all games (unplayed games count as BASE_RATING)
+        List<Rating> existingRatings = ratingRepository.findByUser(user);
+        int totalGames = GameType.values().length;
+
+        int totalRating = 0;
+        for (GameType gameType : GameType.values()) {
+            Rating existingRating = existingRatings.stream()
+                .filter(r -> r.getGameType() == gameType)
+                .findFirst()
+                .orElse(null);
+
+            if (existingRating != null) {
+                totalRating += existingRating.getRating();
+            } else {
+                totalRating += BASE_RATING; // Unplayed games count as 1000
+            }
         }
+
+        user.setAverageRating(totalRating / totalGames);
+        userRepository.save(user);
     }
 
     public List<RatingResponse> getUserRatings(User user) {
-        return ratingRepository.findByUser(user).stream()
-            .map(this::mapToResponse)
+        // Return ratings for ALL games, including unplayed ones with default rating
+        List<Rating> existingRatings = ratingRepository.findByUser(user);
+
+        return java.util.Arrays.stream(GameType.values())
+            .map(gameType -> {
+                Rating existingRating = existingRatings.stream()
+                    .filter(r -> r.getGameType() == gameType)
+                    .findFirst()
+                    .orElse(null);
+
+                if (existingRating != null) {
+                    return mapToResponse(existingRating);
+                } else {
+                    // Create a response for unplayed game with default rating
+                    RatingResponse response = new RatingResponse();
+                    response.setGameType(gameType.name());
+                    response.setGameDisplayName(gameType.getDisplayName());
+                    response.setRating(BASE_RATING);
+                    response.setGamesPlayed(0);
+                    response.setGamesWon(0);
+                    return response;
+                }
+            })
             .collect(Collectors.toList());
     }
 

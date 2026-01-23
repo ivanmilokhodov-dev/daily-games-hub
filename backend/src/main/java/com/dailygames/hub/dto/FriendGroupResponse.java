@@ -26,6 +26,8 @@ public class FriendGroupResponse {
         private String username;
         private String displayName;
         private Integer globalDayStreak;
+        private Integer averageRating;
+        private LocalDateTime joinedAt;
     }
 
     @Data

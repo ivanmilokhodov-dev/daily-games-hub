@@ -3,27 +3,40 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
+import { getTodayAmsterdam } from '../utils/dateUtils'
 
 function Home() {
   const { t } = useTranslation()
   const { isAuthenticated } = useAuth()
   const [games, setGames] = useState([])
+  const [todayScores, setTodayScores] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchGames()
-  }, [])
+    fetchData()
+  }, [isAuthenticated])
 
-  const fetchGames = async () => {
+  const fetchData = async () => {
     try {
-      const response = await api.get('/api/games')
-      setGames(response.data)
+      const gamesResponse = await api.get('/api/games')
+      setGames(gamesResponse.data)
+
+      // Fetch today's scores if authenticated
+      if (isAuthenticated) {
+        const scoresResponse = await api.get('/api/scores/my')
+        const today = getTodayAmsterdam()
+        const todayOnly = scoresResponse.data.filter(s => s.gameDate === today)
+        setTodayScores(todayOnly)
+      }
     } catch (error) {
-      console.error('Failed to fetch games:', error)
+      console.error('Failed to fetch data:', error)
     } finally {
       setLoading(false)
     }
   }
+
+  // Get list of game types played today
+  const gamesPlayedToday = todayScores.map(s => s.gameType)
 
   return (
     <div>
@@ -52,15 +65,36 @@ function Home() {
           </div>
         ) : (
           <div className="games-grid-centered">
-            {games.map((game) => (
-              <div key={game.id} className="game-card">
-                <h3>{game.name}</h3>
-                <p>{game.description}</p>
-                <a href={game.url} target="_blank" rel="noopener noreferrer">
-                  {t('home.playNow')} &rarr;
-                </a>
-              </div>
-            ))}
+            {games.map((game) => {
+              const isPlayed = gamesPlayedToday.includes(game.id)
+              return (
+                <div key={game.id} className="game-card" style={{ position: 'relative' }}>
+                  {isAuthenticated && isPlayed && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '0.75rem',
+                      right: '0.75rem',
+                      background: 'var(--success-color)',
+                      color: 'white',
+                      borderRadius: '9999px',
+                      padding: '0.25rem 0.5rem',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
+                    }}>
+                      ✓ Played
+                    </div>
+                  )}
+                  <h3>{game.name}</h3>
+                  <p>{game.description}</p>
+                  <a href={game.url} target="_blank" rel="noopener noreferrer">
+                    {t('home.playNow')} &rarr;
+                  </a>
+                </div>
+              )
+            })}
           </div>
         )}
       </section>

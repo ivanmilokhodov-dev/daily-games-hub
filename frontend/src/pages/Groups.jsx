@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
+import { getTodayAmsterdam } from '../utils/dateUtils'
 
 function Groups() {
   const { t } = useTranslation()
@@ -16,7 +17,7 @@ function Groups() {
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [showScoreModal, setShowScoreModal] = useState(false)
   const [selectedGroup, setSelectedGroup] = useState(null)
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [selectedDate, setSelectedDate] = useState(getTodayAmsterdam())
   const [groupScores, setGroupScores] = useState([])
   const [scoresLoading, setScoresLoading] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
@@ -27,6 +28,7 @@ function Groups() {
   const [showMembers, setShowMembers] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
   const [error, setError] = useState('')
+  const [memberSort, setMemberSort] = useState('rating') // rating, streak, name, joined
 
   const fetchGroups = useCallback(async (silent = false) => {
     try {
@@ -69,17 +71,13 @@ function Groups() {
     }
   }, [selectedGroup, selectedDate])
 
-  // Polling - update every 5 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchGroups(true)
-      if (selectedGroup) {
-        fetchGroupScores(selectedGroup.id, selectedDate, true)
-      }
-    }, 5000)
-
-    return () => clearInterval(interval)
-  }, [fetchGroups, fetchGroupScores, selectedGroup, selectedDate])
+  // Manual refresh function
+  const handleRefresh = async () => {
+    await fetchGroups(true)
+    if (selectedGroup) {
+      await fetchGroupScores(selectedGroup.id, selectedDate, true)
+    }
+  }
 
   const getBestScoresPerGame = () => {
     const gameScores = {}
@@ -385,8 +383,16 @@ function Groups() {
                   style={{ width: 'auto' }}
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
+                  max={getTodayAmsterdam()}
                 />
+                <button
+                  className="btn btn-small btn-outline"
+                  onClick={handleRefresh}
+                  title="Refresh"
+                  style={{ padding: '0.25rem 0.5rem' }}
+                >
+                  ↻
+                </button>
               </div>
             </div>
 
@@ -442,7 +448,7 @@ function Groups() {
             </div>
 
             <h3 style={{ marginBottom: '1rem' }}>
-              {selectedDate === new Date().toISOString().split('T')[0]
+              {selectedDate === getTodayAmsterdam()
                 ? t('groups.todaysScores')
                 : `Scores for ${new Date(selectedDate + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}`
               }
@@ -478,7 +484,8 @@ function Groups() {
               <form onSubmit={handleCreateGroup}>
                 <div className="form-group">
                   <label className="form-label" htmlFor="groupName">{t('groups.groupName')}</label>
-                  <input type="text" id="groupName" className="form-input" value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} required maxLength={50} disabled={actionLoading} />
+                  <input type="text" id="groupName" className="form-input" value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} required maxLength={15} disabled={actionLoading} />
+                  <small style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Maximum 15 characters</small>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>
                   <button type="submit" className="btn btn-primary" disabled={actionLoading}>{actionLoading ? t('common.loading') : t('common.create')}</button>
@@ -526,7 +533,8 @@ function Groups() {
               <form onSubmit={handleRenameGroup}>
                 <div className="form-group">
                   <label className="form-label" htmlFor="renameName">New Name</label>
-                  <input type="text" id="renameName" className="form-input" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} required maxLength={50} disabled={actionLoading} />
+                  <input type="text" id="renameName" className="form-input" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} required maxLength={15} disabled={actionLoading} />
+                  <small style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Maximum 15 characters</small>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>
                   <button type="submit" className="btn btn-primary" disabled={actionLoading}>{actionLoading ? t('common.loading') : 'Rename'}</button>
@@ -547,9 +555,37 @@ function Groups() {
               <button className="modal-close" onClick={() => setShowMembers(false)} disabled={actionLoading}>&times;</button>
             </div>
             <div className="modal-body">
+              {/* Sort dropdown */}
+              <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Sort by:</label>
+                <select
+                  className="form-select"
+                  value={memberSort}
+                  onChange={(e) => setMemberSort(e.target.value)}
+                  style={{ width: 'auto', padding: '0.25rem 0.5rem', fontSize: '0.875rem' }}
+                >
+                  <option value="rating">Rating (High to Low)</option>
+                  <option value="streak">Streak (High to Low)</option>
+                  <option value="name">Name (A-Z)</option>
+                  <option value="joined">Date Joined (Newest)</option>
+                </select>
+              </div>
               <div className="users-list">
                 {[...selectedGroup.members]
-                  .sort((a, b) => (b.globalDayStreak || 0) - (a.globalDayStreak || 0))
+                  .sort((a, b) => {
+                    switch (memberSort) {
+                      case 'rating':
+                        return (b.averageRating || 1000) - (a.averageRating || 1000)
+                      case 'streak':
+                        return (b.globalDayStreak || 0) - (a.globalDayStreak || 0)
+                      case 'name':
+                        return (a.displayName || a.username).localeCompare(b.displayName || b.username)
+                      case 'joined':
+                        return new Date(b.joinedAt || 0) - new Date(a.joinedAt || 0)
+                      default:
+                        return 0
+                    }
+                  })
                   .map((member, index) => (
                   <div key={member.id} className="user-card">
                     <div className="user-rank">#{index + 1}</div>
@@ -567,6 +603,9 @@ function Groups() {
                         )}
                         {member.globalDayStreak > 0 && (
                           <span className="user-streak">{member.globalDayStreak} day streak</span>
+                        )}
+                        {member.averageRating && (
+                          <span className="user-rating">{member.averageRating} rating</span>
                         )}
                       </div>
                     </div>

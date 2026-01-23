@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dailygames.hub.util.DateUtils;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,7 +29,7 @@ public class ScoreService {
 
     @Transactional
     public ScoreResponse submitScore(User user, ScoreRequest request) {
-        LocalDate gameDate = request.getGameDate() != null ? request.getGameDate() : LocalDate.now();
+        LocalDate gameDate = request.getGameDate() != null ? request.getGameDate() : DateUtils.todayAmsterdam();
 
         // Check if user already submitted for this game today
         if (scoreRepository.findByUserAndGameTypeAndGameDate(user, request.getGameType(), gameDate).isPresent()) {

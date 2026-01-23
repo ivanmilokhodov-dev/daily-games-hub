@@ -11,16 +11,23 @@ const languages = [
 ]
 
 // Version info - updated manually or via build process
-const APP_VERSION = '1.3.0'
+const APP_VERSION = '1.4.0'
 
 // Patch notes for current version
 const PATCH_NOTES = [
-  'Game history filters: filter by game type and date range',
-  'Desktop: Profile avatar next to username in navbar',
-  'Mobile: Close button to collapse expanded group view',
-  'Fixed streak calculation when submitting scores out of order',
-  'Removed friend system (profiles are now view-only)',
-  'Improved streak logic to handle past date submissions correctly'
+  'Amsterdam timezone: Day resets at 00:00 Amsterdam time',
+  'Dashboard: "Today\'s Progress" shows all games with checkmarks for completed ones',
+  'Home page: "Popular Daily Games" shows "✓ Played" badge on games submitted today',
+  'Profile: Shows all games with ratings (unplayed games display 1000 rating)',
+  'Average rating now calculated across all 10 games (unplayed = 1000)',
+  'Submit score: Shows time until next submission when duplicate detected',
+  'Submit score: Game selector and fields visible after pasting result',
+  'Submit score: Game detection works immediately on first paste',
+  'Groups: Manual refresh button replaces auto-updating',
+  'Groups: Users modal shows average rating for each member',
+  'Settings: Display name limited to 15 characters',
+  'Groups: Group names limited to 15 characters',
+  'Fixed theme flash (white blink) on page reload'
 ]
 
 function Settings() {
@@ -234,7 +241,11 @@ function Settings() {
                 className="form-input"
                 value={profileData.displayName}
                 onChange={handleProfileChange}
+                maxLength={15}
               />
+              <small style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                Maximum 15 characters
+              </small>
             </div>
             <div className="form-group">
               <label className="form-label">{t('auth.email')}</label>

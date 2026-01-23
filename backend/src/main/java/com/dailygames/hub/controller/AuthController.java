@@ -4,6 +4,7 @@ import com.dailygames.hub.config.JwtUtil;
 import com.dailygames.hub.dto.*;
 import com.dailygames.hub.model.User;
 import com.dailygames.hub.service.PasswordResetService;
+import com.dailygames.hub.service.RatingService;
 import com.dailygames.hub.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,18 +25,20 @@ public class AuthController {
     private final UserService userService;
     private final JwtUtil jwtUtil;
     private final PasswordResetService passwordResetService;
+    private final RatingService ratingService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         User user = userService.registerUser(request);
         String token = jwtUtil.generateToken(user.getUsername());
+        int avgRating = calculateAverageRating(user);
         return ResponseEntity.ok(new AuthResponse(
             token,
             user.getUsername(),
             user.getEmail(),
             user.getDisplayName(),
             user.getGlobalDayStreak(),
-            user.getAverageRating()
+            avgRating
         ));
     }
 
@@ -47,27 +50,37 @@ public class AuthController {
 
         User user = userService.findByUsername(request.getUsername());
         String token = jwtUtil.generateToken(user.getUsername());
+        int avgRating = calculateAverageRating(user);
         return ResponseEntity.ok(new AuthResponse(
             token,
             user.getUsername(),
             user.getEmail(),
             user.getDisplayName(),
             user.getGlobalDayStreak(),
-            user.getAverageRating()
+            avgRating
         ));
     }
 
     @GetMapping("/me")
     public ResponseEntity<AuthResponse> getCurrentUser(Authentication authentication) {
         User user = userService.findByUsername(authentication.getName());
+        int avgRating = calculateAverageRating(user);
         return ResponseEntity.ok(new AuthResponse(
             null,
             user.getUsername(),
             user.getEmail(),
             user.getDisplayName(),
             user.getGlobalDayStreak(),
-            user.getAverageRating()
+            avgRating
         ));
+    }
+
+    private int calculateAverageRating(User user) {
+        var ratings = ratingService.getUserRatings(user);
+        return (int) ratings.stream()
+            .mapToInt(RatingResponse::getRating)
+            .average()
+            .orElse(1000);
     }
 
     @PostMapping("/forgot-password")

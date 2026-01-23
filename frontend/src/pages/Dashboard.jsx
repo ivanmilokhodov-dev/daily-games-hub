@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
+import { getTodayAmsterdam } from '../utils/dateUtils'
 
 function Dashboard() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const [scores, setScores] = useState([])
   const [streaks, setStreaks] = useState([])
+  const [games, setGames] = useState([])
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedScore, setSelectedScore] = useState(null)
@@ -20,12 +22,14 @@ function Dashboard() {
 
   const fetchData = async () => {
     try {
-      const [scoresRes, streaksRes] = await Promise.all([
+      const [scoresRes, streaksRes, gamesRes] = await Promise.all([
         api.get('/api/scores/my'),
-        api.get('/api/streaks/my')
+        api.get('/api/streaks/my'),
+        api.get('/api/games')
       ])
       setScores(scoresRes.data)
       setStreaks(streaksRes.data)
+      setGames(gamesRes.data)
     } catch (error) {
       console.error('Failed to fetch data:', error)
     } finally {
@@ -34,8 +38,11 @@ function Dashboard() {
   }
 
   const todayScores = scores.filter(
-    (score) => score.gameDate === new Date().toISOString().split('T')[0]
+    (score) => score.gameDate === getTodayAmsterdam()
   )
+
+  // Get list of games played today (for the indicator)
+  const gamesPlayedToday = todayScores.map(s => s.gameType)
 
   // Pagination for recent activity
   const totalPages = Math.ceil(scores.length / itemsPerPage)
@@ -59,10 +66,58 @@ function Dashboard() {
         <p>{t('dashboard.subtitle')}</p>
       </div>
 
+      {/* Games played today indicator */}
+      {games.length > 0 && (
+        <div className="card" style={{ marginBottom: '1rem' }}>
+          <div className="card-header">
+            <h2 className="card-title">Today's Progress</h2>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+              {gamesPlayedToday.length} / {games.length} games
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            {games.map((game) => {
+              const isPlayed = gamesPlayedToday.includes(game.id)
+              return (
+                <span
+                  key={game.id}
+                  style={{
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: '9999px',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    background: isPlayed ? 'var(--success-color)' : 'var(--hover-background)',
+                    color: isPlayed ? 'white' : 'var(--text-secondary)',
+                    border: isPlayed ? 'none' : '1px solid var(--border-color)'
+                  }}
+                >
+                  {isPlayed ? '✓ ' : ''}{game.name}
+                </span>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-2">
         <div className="card">
           <div className="card-header">
-            <h2 className="card-title">{t('dashboard.todaysGames')}</h2>
+            <h2 className="card-title">
+              {t('dashboard.todaysGames')}
+              {todayScores.length > 0 && (
+                <span style={{
+                  marginLeft: '0.5rem',
+                  background: 'var(--primary-color)',
+                  color: 'white',
+                  padding: '0.125rem 0.5rem',
+                  borderRadius: '9999px',
+                  fontSize: '0.875rem',
+                  fontWeight: '600'
+                }}>
+                  {todayScores.length}
+                </span>
+              )}
+            </h2>
             <Link to="/submit" className="btn btn-primary btn-small">
               {t('nav.submitScore')}
             </Link>
