@@ -229,6 +229,7 @@ function Groups() {
 
   const renderScoreDisplay = (score, game, index) => {
     const isHorse = game.gameType === 'HORSE'
+    const isCurrentUser = score.username === user?.username
 
     return (
       <div
@@ -239,7 +240,11 @@ function Groups() {
           alignItems: 'center',
           padding: '0.5rem 0',
           borderTop: index > 0 ? '1px solid var(--border-color)' : undefined,
-          cursor: 'pointer'
+          cursor: 'pointer',
+          background: isCurrentUser ? 'var(--primary-color-light, rgba(99, 102, 241, 0.1))' : undefined,
+          margin: isCurrentUser ? '0 -0.5rem' : undefined,
+          padding: isCurrentUser ? '0.5rem' : '0.5rem 0',
+          borderRadius: isCurrentUser ? '0.375rem' : undefined
         }}
         onClick={() => openScoreModal(score)}
         title="Click to view submitted score"
@@ -248,7 +253,12 @@ function Groups() {
           <span style={{ fontWeight: index === 0 ? '700' : '400', color: index === 0 ? 'var(--primary-color)' : 'inherit' }}>
             #{index + 1}
           </span>
-          <span>{score.displayName}</span>
+          <span style={{
+            fontWeight: isCurrentUser ? '600' : '400',
+            color: isCurrentUser ? 'var(--primary-color)' : 'inherit'
+          }}>
+            {score.displayName}
+          </span>
         </div>
         <div style={{ textAlign: 'right' }}>
           {isHorse ? (

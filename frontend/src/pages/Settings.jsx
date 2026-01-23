@@ -24,7 +24,9 @@ const PATCH_NOTES = [
   'Submit score: Game selector and fields visible after pasting result',
   'Submit score: Game detection works immediately on first paste',
   'Groups: Manual refresh button replaces auto-updating',
-  'Groups: Users modal shows average rating for each member',
+  'Groups: Users modal with sort options (rating, streak, name, date joined)',
+  'Groups: Your scores highlighted in group scores view',
+  'Groups: Shows average rating for each member',
   'Settings: Display name limited to 15 characters',
   'Groups: Group names limited to 15 characters',
   'Fixed theme flash (white blink) on page reload'
