@@ -14,4 +14,5 @@ public class AuthResponse {
     private String displayName;
     private Integer globalDayStreak;
     private Integer averageRating;
+    private Boolean isAdmin;
 }

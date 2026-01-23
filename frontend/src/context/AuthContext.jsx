@@ -68,7 +68,8 @@ export function AuthProvider({ children }) {
     register,
     logout,
     refreshUser,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    isAdmin: user?.isAdmin === true
   }
 
   return (

@@ -28,6 +28,28 @@ function PrivateRoute({ children }) {
   return isAuthenticated ? children : <Navigate to="/login" />
 }
 
+function AdminRoute({ children }) {
+  const { isAuthenticated, isAdmin, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="loading">
+        <div className="spinner"></div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/" />
+  }
+
+  return children
+}
+
 function App() {
   return (
     <>
@@ -83,9 +105,9 @@ function App() {
           <Route
             path="/admin"
             element={
-              <PrivateRoute>
+              <AdminRoute>
                 <Admin />
-              </PrivateRoute>
+              </AdminRoute>
             }
           />
         </Routes>

@@ -238,7 +238,6 @@ function Groups() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '0.5rem 0',
           borderTop: index > 0 ? '1px solid var(--border-color)' : undefined,
           cursor: 'pointer',
           background: isCurrentUser ? 'var(--primary-color-light, rgba(99, 102, 241, 0.1))' : undefined,

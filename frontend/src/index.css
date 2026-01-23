@@ -1891,6 +1891,80 @@ button.user-badge {
   min-width: 40px;
 }
 
+/* Admin Stat Cards */
+.stat-card {
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.stat-card .stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.stat-card .stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+/* Admin Game Stats Grid */
+.game-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.game-stat-item {
+  padding: 1rem;
+  background: var(--hover-background);
+  border-radius: 0.5rem;
+}
+
+.game-stat-header {
+  margin-bottom: 0.75rem;
+}
+
+.game-stat-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.game-stat-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.game-stat-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: 24px;
+}
+
+.game-stat-bar {
+  height: 100%;
+  border-radius: 4px;
+  min-width: 4px;
+  transition: width 0.3s ease;
+}
+
+.game-stat-bar.total {
+  background: var(--primary-color);
+}
+
+.game-stat-bar.today {
+  background: var(--success-color);
+}
+
+.game-stat-count {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
 /* Mobile Navigation */
 .mobile-menu-container,
 .mobile-profile-container {

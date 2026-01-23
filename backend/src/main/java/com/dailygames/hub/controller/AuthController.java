@@ -30,7 +30,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         User user = userService.registerUser(request);
-        String token = jwtUtil.generateToken(user.getUsername());
+        String token = jwtUtil.generateToken(user.getUsername(), Boolean.TRUE.equals(user.getIsAdmin()));
         int avgRating = calculateAverageRating(user);
         return ResponseEntity.ok(new AuthResponse(
             token,
@@ -38,7 +38,8 @@ public class AuthController {
             user.getEmail(),
             user.getDisplayName(),
             user.getGlobalDayStreak(),
-            avgRating
+            avgRating,
+            user.getIsAdmin()
         ));
     }
 
@@ -49,7 +50,7 @@ public class AuthController {
         );
 
         User user = userService.findByUsername(request.getUsername());
-        String token = jwtUtil.generateToken(user.getUsername());
+        String token = jwtUtil.generateToken(user.getUsername(), Boolean.TRUE.equals(user.getIsAdmin()));
         int avgRating = calculateAverageRating(user);
         return ResponseEntity.ok(new AuthResponse(
             token,
@@ -57,7 +58,8 @@ public class AuthController {
             user.getEmail(),
             user.getDisplayName(),
             user.getGlobalDayStreak(),
-            avgRating
+            avgRating,
+            user.getIsAdmin()
         ));
     }
 
@@ -71,7 +73,8 @@ public class AuthController {
             user.getEmail(),
             user.getDisplayName(),
             user.getGlobalDayStreak(),
-            avgRating
+            avgRating,
+            user.getIsAdmin()
         ));
     }
 

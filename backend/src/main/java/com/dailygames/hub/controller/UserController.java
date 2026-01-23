@@ -31,7 +31,8 @@ public class UserController {
             updated.getEmail(),
             updated.getDisplayName(),
             updated.getGlobalDayStreak(),
-            updated.getAverageRating()
+            updated.getAverageRating(),
+            updated.getIsAdmin()
         ));
     }
 

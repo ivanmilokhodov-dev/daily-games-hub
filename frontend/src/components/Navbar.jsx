@@ -126,6 +126,16 @@ function Navbar() {
                       {t('nav.settings')}
                     </Link>
 
+                    {user?.isAdmin && (
+                      <Link
+                        to="/admin"
+                        className="user-dropdown-item"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        {t('nav.admin')}
+                      </Link>
+                    )}
+
                     <div className="user-dropdown-divider" />
 
                     <button
@@ -189,6 +199,15 @@ function Navbar() {
                 >
                   {t('nav.settings')}
                 </Link>
+                {user?.isAdmin && (
+                  <Link
+                    to="/admin"
+                    className="user-dropdown-item"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    {t('nav.admin')}
+                  </Link>
+                )}
                 <div className="user-dropdown-divider" />
                 <button
                   className="user-dropdown-item logout-item"

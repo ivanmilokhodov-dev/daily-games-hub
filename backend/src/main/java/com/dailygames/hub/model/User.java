@@ -50,6 +50,10 @@ public class User {
     @Column(nullable = false)
     private Integer averageRating = 1000;
 
+    // Admin status - user ID 1 is always the primary admin
+    @Column(nullable = false)
+    private Boolean isAdmin = false;
+
     @ManyToMany(mappedBy = "members")
     private Set<FriendGroup> friendGroups = new HashSet<>();
 

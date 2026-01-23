@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useTheme, themes } from '../context/ThemeContext'
@@ -11,33 +10,22 @@ const languages = [
 ]
 
 // Version info - updated manually or via build process
-const APP_VERSION = '1.4.0'
+const APP_VERSION = '1.5.0'
 
 // Patch notes for current version
 const PATCH_NOTES = [
-  'Amsterdam timezone: Day resets at 00:00 Amsterdam time',
-  'Dashboard: "Today\'s Progress" shows all games with checkmarks for completed ones',
-  'Home page: "Popular Daily Games" shows "✓ Played" badge on games submitted today',
-  'Profile: Shows all games with ratings (unplayed games display 1000 rating)',
-  'Average rating now calculated across all 10 games (unplayed = 1000)',
-  'Submit score: Shows time until next submission when duplicate detected',
-  'Submit score: Game selector and fields visible after pasting result',
-  'Submit score: Game detection works immediately on first paste',
-  'Submit score: Clearer placeholder text explaining to paste from game\'s Share button',
-  'Groups: Manual refresh button replaces auto-updating',
-  'Groups: Users modal with sort options (rating, streak, name, date joined)',
-  'Groups: Your scores highlighted in group scores view',
-  'Groups: Shows average rating for each member',
-  'Settings: Display name limited to 15 characters',
-  'Groups: Group names limited to 15 characters',
-  'Fixed theme flash (white blink) on page reload'
+  'Admin Panel: Role-based admin system (user ID 1 is primary admin)',
+  'Admin Panel: Admins can add/remove other admins',
+  'Admin Panel: Charts showing daily active users, games played, and user growth',
+  'Admin Panel: User management with search and pagination',
+  'Admin Panel: Access moved from Settings to profile dropdown for admins',
+  'Security: Admin endpoints now require proper authentication'
 ]
 
 function Settings() {
   const { t, i18n } = useTranslation()
   const { user, refreshUser } = useAuth()
   const { theme, setTheme } = useTheme()
-  const navigate = useNavigate()
 
   const [profileData, setProfileData] = useState({
     displayName: user?.displayName || '',
@@ -51,10 +39,8 @@ function Settings() {
     confirmNewPassword: ''
   })
 
-  const [adminPassword, setAdminPassword] = useState('')
   const [profileMessage, setProfileMessage] = useState({ type: '', text: '' })
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' })
-  const [adminMessage, setAdminMessage] = useState({ type: '', text: '' })
   const [loading, setLoading] = useState({ profile: false, password: false })
 
   const handleProfileChange = (e) => {
@@ -116,18 +102,6 @@ function Settings() {
       setPasswordMessage({ type: 'error', text: message })
     } finally {
       setLoading(prev => ({ ...prev, password: false }))
-    }
-  }
-
-  const handleAdminAccess = (e) => {
-    e.preventDefault()
-    setAdminMessage({ type: '', text: '' })
-
-    if (adminPassword === 'password') {
-      localStorage.setItem('adminAccess', 'true')
-      navigate('/admin')
-    } else {
-      setAdminMessage({ type: 'error', text: t('settings.invalidAdminPassword') })
     }
   }
 
@@ -314,29 +288,6 @@ function Settings() {
             </button>
           </form>
         </div>
-      </div>
-
-      {/* Admin Section */}
-      <div className="card" style={{ marginBottom: '1.5rem' }}>
-        <h2 className="card-title" style={{ marginBottom: '1.5rem' }}>{t('settings.admin')}</h2>
-        {adminMessage.text && (
-          <div className="error-message">{adminMessage.text}</div>
-        )}
-        <form onSubmit={handleAdminAccess}>
-          <div className="form-group">
-            <label className="form-label">{t('settings.enterAdminPassword')}</label>
-            <input
-              type="password"
-              className="form-input"
-              value={adminPassword}
-              onChange={(e) => setAdminPassword(e.target.value)}
-              required
-            />
-          </div>
-          <button type="submit" className="btn btn-primary">
-            {t('settings.accessAdmin')}
-          </button>
-        </form>
       </div>
 
       {/* Version Info */}

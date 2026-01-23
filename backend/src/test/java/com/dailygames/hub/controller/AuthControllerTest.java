@@ -31,6 +31,7 @@ import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -102,7 +103,7 @@ class AuthControllerTest {
         newUser.setAverageRating(1000);
 
         when(userService.registerUser(any(RegisterRequest.class))).thenReturn(newUser);
-        when(jwtUtil.generateToken("newuser")).thenReturn("jwt-token");
+        when(jwtUtil.generateToken(eq("newuser"), eq(false))).thenReturn("jwt-token");
 
         mockMvc.perform(post("/api/auth/register")
                 .with(csrf())
@@ -125,7 +126,7 @@ class AuthControllerTest {
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
             .thenReturn(auth);
         when(userService.findByUsername("testuser")).thenReturn(testUser);
-        when(jwtUtil.generateToken("testuser")).thenReturn("jwt-token");
+        when(jwtUtil.generateToken(eq("testuser"), eq(false))).thenReturn("jwt-token");
 
         mockMvc.perform(post("/api/auth/login")
                 .with(csrf())

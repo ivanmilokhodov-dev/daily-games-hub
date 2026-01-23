@@ -14,7 +14,8 @@
     "yes": "Так",
     "no": "Ні",
     "or": "або",
-    "and": "та"
+    "and": "та",
+    "search": "Пошук"
   },
   "nav": {
     "home": "Головна",
@@ -31,7 +32,8 @@
     "profile": "Профіль",
     "settings": "Налаштування",
     "help": "Допомога",
-    "toggleTheme": "Тема"
+    "toggleTheme": "Тема",
+    "admin": "Адмін"
   },
   "social": {
     "title": "Спільнота",
@@ -287,6 +289,25 @@
     "totalPlays": "Всього ігор",
     "todayPlays": "Ігор сьогодні",
     "totalUsers": "Всього користувачів",
-    "activeToday": "Активних сьогодні"
+    "activeToday": "Активних сьогодні",
+    "tabs": {
+      "overview": "Огляд",
+      "charts": "Графіки",
+      "admins": "Адміни",
+      "users": "Користувачі"
+    },
+    "charts": {
+      "dailyUsers": "Активні користувачі за день",
+      "gamesPlayed": "Ігор за день",
+      "userGrowth": "Зростання користувачів"
+    },
+    "manageAdmins": "Керування адмінами",
+    "currentAdmins": "Поточні адміни",
+    "searchUserPlaceholder": "Пошук користувачів...",
+    "makeAdmin": "Зробити адміном",
+    "removeAdmin": "Видалити адміна",
+    "alreadyAdmin": "Вже адмін",
+    "primaryAdmin": "Головний адмін",
+    "allUsers": "Всі користувачі"
   }
 }

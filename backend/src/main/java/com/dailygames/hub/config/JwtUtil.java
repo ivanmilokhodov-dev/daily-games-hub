@@ -25,13 +25,18 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(String username) {
+    public String generateToken(String username, boolean isAdmin) {
         return Jwts.builder()
             .subject(username)
+            .claim("isAdmin", isAdmin)
             .issuedAt(new Date())
             .expiration(new Date(System.currentTimeMillis() + expiration))
             .signWith(getSigningKey())
             .compact();
+    }
+
+    public Boolean extractIsAdmin(String token) {
+        return extractClaim(token, claims -> claims.get("isAdmin", Boolean.class));
     }
 
     public String extractUsername(String token) {

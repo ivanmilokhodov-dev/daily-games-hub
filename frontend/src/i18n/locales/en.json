@@ -14,7 +14,8 @@
     "yes": "Yes",
     "no": "No",
     "or": "or",
-    "and": "and"
+    "and": "and",
+    "search": "Search"
   },
   "nav": {
     "home": "Home",
@@ -31,7 +32,8 @@
     "profile": "Profile",
     "settings": "Settings",
     "help": "Help",
-    "toggleTheme": "Theme"
+    "toggleTheme": "Theme",
+    "admin": "Admin"
   },
   "social": {
     "title": "Social",
@@ -287,6 +289,25 @@
     "totalPlays": "Total Plays",
     "todayPlays": "Today's Plays",
     "totalUsers": "Total Users",
-    "activeToday": "Active Today"
+    "activeToday": "Active Today",
+    "tabs": {
+      "overview": "Overview",
+      "charts": "Charts",
+      "admins": "Admins",
+      "users": "Users"
+    },
+    "charts": {
+      "dailyUsers": "Daily Active Users",
+      "gamesPlayed": "Games Played per Day",
+      "userGrowth": "User Growth (Cumulative)"
+    },
+    "manageAdmins": "Manage Admins",
+    "currentAdmins": "Current Admins",
+    "searchUserPlaceholder": "Search users by username...",
+    "makeAdmin": "Make Admin",
+    "removeAdmin": "Remove Admin",
+    "alreadyAdmin": "Already Admin",
+    "primaryAdmin": "Primary Admin",
+    "allUsers": "All Users"
   }
 }
