@@ -66,10 +66,10 @@ class FriendGroupServiceTest {
         group.setGroupStreak(0);
         group.setLongestGroupStreak(0);
 
-        // Mock rating service to return default ratings
+        // Mock rating service to return default ratings (lenient because not all tests use it)
         RatingResponse defaultRating = new RatingResponse();
         defaultRating.setRating(1000);
-        when(ratingService.getUserRatings(any(User.class))).thenReturn(List.of(defaultRating));
+        lenient().when(ratingService.getUserRatings(any(User.class))).thenReturn(List.of(defaultRating));
     }
 
     @Test
