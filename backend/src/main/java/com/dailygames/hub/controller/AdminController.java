@@ -78,7 +78,7 @@ public class AdminController {
         for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
             Map<String, Object> dayData = new HashMap<>();
             dayData.put("date", date.toString());
-            dayData.put("activeUsers", userRepository.countByLastActiveDate(date));
+            dayData.put("activeUsers", scoreRepository.countDistinctUsersByGameDate(date));
             dailyUsers.add(dayData);
         }
         response.put("dailyUsers", dailyUsers);
