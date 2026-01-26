@@ -5,7 +5,9 @@ import com.dailygames.hub.model.User;
 import com.dailygames.hub.repository.PasswordResetTokenRepository;
 import com.dailygames.hub.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PasswordResetService {
 
     private final UserRepository userRepository;
@@ -61,7 +64,13 @@ public class PasswordResetService {
             "The Scorle Team"
         );
 
-        mailSender.send(message);
+        try {
+            mailSender.send(message);
+            log.info("Password reset email sent successfully to: {}", toEmail);
+        } catch (MailException e) {
+            log.error("Failed to send password reset email to: {}", toEmail, e);
+            throw new RuntimeException("Failed to send password reset email. Please try again later.");
+        }
     }
 
     @Transactional
