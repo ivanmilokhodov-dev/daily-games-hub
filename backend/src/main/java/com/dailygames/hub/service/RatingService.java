@@ -60,6 +60,15 @@ public class RatingService {
             } else {
                 ratingChange = -K_FACTOR;
             }
+        } else if (gameType == GameType.TRAVLE) {
+            // Travle: attempts = penalty (extra tries beyond perfect, the +X value)
+            // +0 (perfect) = +32, +1 = +28, +2 = +24, etc. (-4 per extra try)
+            if (solved) {
+                rating.setGamesWon(rating.getGamesWon() + 1);
+                ratingChange = K_FACTOR - (attempts * 4);
+            } else {
+                ratingChange = -K_FACTOR;
+            }
         } else if (solved) {
             rating.setGamesWon(rating.getGamesWon() + 1);
             // Symmetric: perfect (1 attempt) = +K_FACTOR, worst solved (max attempts) = 0
