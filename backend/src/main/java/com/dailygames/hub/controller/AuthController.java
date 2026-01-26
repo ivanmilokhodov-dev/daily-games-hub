@@ -4,6 +4,7 @@ import com.dailygames.hub.config.JwtUtil;
 import com.dailygames.hub.dto.*;
 import com.dailygames.hub.model.User;
 import com.dailygames.hub.service.PasswordResetService;
+import com.dailygames.hub.service.RateLimitService;
 import com.dailygames.hub.service.RatingService;
 import com.dailygames.hub.service.UserService;
 import jakarta.validation.Valid;
@@ -26,6 +27,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final PasswordResetService passwordResetService;
     private final RatingService ratingService;
+    private final RateLimitService rateLimitService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -88,12 +90,24 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        // Check rate limit by email
+        if (!rateLimitService.isAllowed(request.getEmail())) {
+            long secondsUntilReset = rateLimitService.getSecondsUntilReset(request.getEmail());
+            long minutesUntilReset = (secondsUntilReset + 59) / 60; // Round up
+            return ResponseEntity.status(429).body(Map.of(
+                "error", "Too many password reset requests. Please try again in " + minutesUntilReset + " minutes."
+            ));
+        }
+
         try {
             passwordResetService.createPasswordResetToken(request.getEmail());
             return ResponseEntity.ok(Map.of("message", "Password reset link sent to your email"));
         } catch (IllegalArgumentException e) {
             // Don't reveal if email exists or not for security
             return ResponseEntity.ok(Map.of("message", "If this email is registered, you will receive a password reset link"));
+        } catch (RuntimeException e) {
+            // Email sending failed
+            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to send email. Please try again later."));
         }
     }
 
