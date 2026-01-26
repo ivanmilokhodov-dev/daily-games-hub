@@ -355,6 +355,7 @@ function SubmitScore() {
                   value={formData.gameType}
                   onChange={handleChange}
                   required
+                  disabled
                 >
                   <option value="">{t('submit.selectGame')}</option>
                   {games.map((game) => (
@@ -379,6 +380,7 @@ function SubmitScore() {
                         className="form-select"
                         value={formData.solved}
                         onChange={handleChange}
+                        disabled
                       >
                         <option value="">{t('submit.notSure')}</option>
                         <option value="true">{t('common.yes')}</option>
@@ -400,6 +402,7 @@ function SubmitScore() {
                         value={formData.attempts}
                         onChange={handleChange}
                         min="0"
+                        disabled
                       />
                     </div>
                   )}
@@ -422,6 +425,7 @@ function SubmitScore() {
                         onChange={handleChange}
                         min="0"
                         max="100"
+                        disabled
                       />
                     </div>
                   )}
@@ -438,6 +442,7 @@ function SubmitScore() {
                         className="form-input"
                         value={formData.timeSeconds}
                         onChange={handleChange}
+                        disabled
                       />
                     </div>
                   )}
