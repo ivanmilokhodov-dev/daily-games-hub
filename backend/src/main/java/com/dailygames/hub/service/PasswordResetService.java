@@ -30,6 +30,9 @@ public class PasswordResetService {
     @Value("${spring.mail.username:noreply@scorle.app}")
     private String fromEmail;
 
+    @Value("${app.mail.enabled:true}")
+    private boolean mailEnabled;
+
     @Transactional
     public void createPasswordResetToken(String email) {
         User user = userRepository.findByEmail(email)
@@ -48,6 +51,15 @@ public class PasswordResetService {
 
     private void sendResetEmail(String toEmail, String token) {
         String resetUrl = frontendUrl + "/reset-password?token=" + token;
+
+        // Development mode: log the reset URL instead of sending email
+        if (!mailEnabled) {
+            log.info("========================================");
+            log.info("DEVELOPMENT MODE - Email sending disabled");
+            log.info("Password reset link for {}: {}", toEmail, resetUrl);
+            log.info("========================================");
+            return;
+        }
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);
