@@ -15,11 +15,22 @@ function ForgotPassword() {
     setMessage({ type: '', text: '' })
 
     try {
-      await api.post('/api/auth/forgot-password', { email })
-      setMessage({ type: 'success', text: t('settings.resetLinkSent') })
+      const response = await api.post('/api/auth/forgot-password', { email })
+      setMessage({ type: 'success', text: response.data.message || t('settings.resetLinkSent') })
       setEmail('')
     } catch (err) {
-      setMessage({ type: 'error', text: t('settings.resetLinkFailed') })
+      const errorData = err.response?.data
+      const status = err.response?.status
+
+      if (status === 429) {
+        // Rate limited
+        setMessage({ type: 'error', text: errorData?.error || t('settings.tooManyRequests') })
+      } else if (status === 500) {
+        // Server error (email sending failed)
+        setMessage({ type: 'error', text: errorData?.error || t('settings.resetLinkFailed') })
+      } else {
+        setMessage({ type: 'error', text: t('settings.resetLinkFailed') })
+      }
     } finally {
       setLoading(false)
     }
