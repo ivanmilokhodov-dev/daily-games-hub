@@ -27,11 +27,8 @@ public class PasswordResetService {
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
-    @Value("${spring.mail.username:noreply@scorle.app}")
+    @Value("${spring.mail.username}")
     private String fromEmail;
-
-    @Value("${app.mail.enabled:true}")
-    private boolean mailEnabled;
 
     @Transactional
     public void createPasswordResetToken(String email) {
@@ -52,28 +49,19 @@ public class PasswordResetService {
     private void sendResetEmail(String toEmail, String token) {
         String resetUrl = frontendUrl + "/reset-password?token=" + token;
 
-        // Development mode: log the reset URL instead of sending email
-        if (!mailEnabled) {
-            log.info("========================================");
-            log.info("DEVELOPMENT MODE - Email sending disabled");
-            log.info("Password reset link for {}: {}", toEmail, resetUrl);
-            log.info("========================================");
-            return;
-        }
-
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);
         message.setTo(toEmail);
-        message.setSubject("Scorle - Password Reset Request");
+        message.setSubject("Scordle - Password Reset Request");
         message.setText(
             "Hello,\n\n" +
-            "You have requested to reset your password for your Scorle account.\n\n" +
+            "You have requested to reset your password for your Scordle account.\n\n" +
             "Click the following link to reset your password:\n" +
             resetUrl + "\n\n" +
             "This link will expire in 1 hour.\n\n" +
             "If you did not request a password reset, please ignore this email.\n\n" +
             "Best regards,\n" +
-            "The Scorle Team"
+            "The Scordle Team"
         );
 
         try {
