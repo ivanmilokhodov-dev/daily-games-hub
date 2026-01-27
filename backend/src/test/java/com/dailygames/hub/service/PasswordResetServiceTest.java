@@ -107,7 +107,7 @@ class PasswordResetServiceTest {
 
         SimpleMailMessage sentMessage = messageCaptor.getValue();
         assertThat(sentMessage.getTo()).contains("test@example.com");
-        assertThat(sentMessage.getSubject()).isEqualTo("Scorle - Password Reset Request");
+        assertThat(sentMessage.getSubject()).isEqualTo("Scordle - Password Reset Request");
         assertThat(sentMessage.getText()).contains("http://localhost:5173/reset-password?token=");
     }
 
